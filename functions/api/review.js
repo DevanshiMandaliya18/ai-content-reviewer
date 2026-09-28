@@ -304,40 +304,143 @@ function calculateHemingwayGrade(text) {
   };
 }
 
-function analyzeLinks(content) {
-  if (!content || typeof content !== 'string') {
-    return { totalLinks: 0, internalLinksCount: 0, externalLinksCount: 0, internalLinks: [], externalLinks: [], linksInFirstFoldCount: 0 };
+function extractDomain(url) {
+  try {
+    const cleaned = url.replace(/^[a-z]+:\/\//i, '').replace(/^www\./i, '');
+    const slashIdx = cleaned.indexOf('/');
+    return (slashIdx !== -1 ? cleaned.substring(0, slashIdx) : cleaned).toLowerCase();
+  } catch (e) {
+    return '';
   }
+}
 
-  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  const htmlLinkRegex = /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi;
+function analyzeLinks(content, title = '') {
+  if (!content || typeof content !== 'string') {
+    return {
+      totalLinks: 0,
+      internalLinksCount: 0,
+      externalLinksCount: 0,
+      internalLinks: [],
+      externalLinks: [],
+      linksInFirstFoldCount: 0,
+      uncleanLinks: [],
+      isAllClean: true
+    };
+  }
 
   const allLinks = [];
-  let match;
+  const seenUrls = new Set();
 
+  // 1. Extract Markdown Links [text](url)
+  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  let match;
   while ((match = mdLinkRegex.exec(content)) !== null) {
-    allLinks.push({ text: match[1].trim(), url: match[2].trim() });
+    const text = match[1].trim();
+    const url = match[2].trim();
+    if (url && !seenUrls.has(url)) {
+      seenUrls.add(url);
+      allLinks.push({ text, url, raw: match[0] });
+    }
   }
 
+  // 2. Extract HTML Links <a ...href="url"...>text</a>
+  const htmlLinkRegex = /<a\s+[^>]*?href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   while ((match = htmlLinkRegex.exec(content)) !== null) {
-    allLinks.push({ text: match[2].replace(/<[^>]*>/g, '').trim(), url: match[1].trim() });
+    const url = match[1].trim();
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+    if (url && !seenUrls.has(url)) {
+      seenUrls.add(url);
+      allLinks.push({ text: text || url, url, raw: match[0] });
+    }
+  }
+
+  // 3. Scan for tracking parameters
+  const trackingParamRegex = /(?:[?&](?:utm_[a-z0-9_]+|fbclid|gclid|msclkid|mc_cid|mc_eid|ref_src|yclid)=[^&#]*)/i;
+  const uncleanLinks = [];
+  for (const link of allLinks) {
+    if (trackingParamRegex.test(link.url) || /utm_source=/i.test(link.url)) {
+      uncleanLinks.push(link);
+    }
+  }
+
+  // 4. Categorize Internal vs External
+  const knownExternalDomainSuffixes = [
+    'wikipedia.org', 'who.int', 'nih.gov', 'cdc.gov', 'gov.in', 'gov.uk', 'reuters.com',
+    'bloomberg.com', 'forbes.com', 'nytimes.com', 'bbc.com', 'techcrunch.com',
+    'github.com', 'w3.org', 'mozilla.org', 'stackoverflow.com', 'medium.com'
+  ];
+
+  const domainCounts = {};
+  for (const link of allLinks) {
+    const dom = extractDomain(link.url);
+    if (dom) {
+      domainCounts[dom] = (domainCounts[dom] || 0) + 1;
+    }
+  }
+
+  let primaryDomain = '';
+  let maxCount = 0;
+  for (const [dom, count] of Object.entries(domainCounts)) {
+    if (count > maxCount && !knownExternalDomainSuffixes.some(k => dom.endsWith(k))) {
+      maxCount = count;
+      primaryDomain = dom;
+    }
+  }
+
+  const cleanTitle = (title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const dom of Object.keys(domainCounts)) {
+    const rootName = dom.split('.')[0];
+    if (rootName.length >= 3 && cleanTitle.includes(rootName)) {
+      primaryDomain = dom;
+      break;
+    }
   }
 
   const internalLinks = [];
   const externalLinks = [];
 
   for (const link of allLinks) {
-    const url = link.url.toLowerCase();
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('www.')) {
+    const url = link.url;
+    const dom = extractDomain(url);
+    const isRelative = !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//');
+    const isSamePrimaryDomain = Boolean(dom && primaryDomain && (dom === primaryDomain || dom.endsWith('.' + primaryDomain)));
+    const isKnownExternal = Boolean(dom && knownExternalDomainSuffixes.some(k => dom.endsWith(k)));
+
+    if (isRelative || isSamePrimaryDomain) {
+      internalLinks.push(link);
+    } else if (isKnownExternal) {
       externalLinks.push(link);
     } else {
-      internalLinks.push(link);
+      if (Object.keys(domainCounts).length <= 1 && dom) {
+        internalLinks.push(link);
+      } else if (dom === primaryDomain) {
+        internalLinks.push(link);
+      } else {
+        externalLinks.push(link);
+      }
     }
   }
 
-  const words = content.trim().split(/\s+/).filter(Boolean);
-  const firstFoldText = words.slice(0, 180).join(' ');
-  const linksInFirstFold = allLinks.filter(l => firstFoldText.includes(l.url) || firstFoldText.includes(l.text));
+  // Fallback: If all links point to same domain and none are marked internal yet
+  if (internalLinks.length === 0 && externalLinks.length > 0) {
+    const firstDom = extractDomain(externalLinks[0].url);
+    const allSameDom = externalLinks.every(l => extractDomain(l.url) === firstDom);
+    if (allSameDom && firstDom && !knownExternalDomainSuffixes.some(k => firstDom.endsWith(k))) {
+      internalLinks.push(...externalLinks);
+      externalLinks.length = 0;
+    }
+  }
+
+  // First fold check (first 180 words)
+  const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = plainText.split(/\s+/).filter(Boolean);
+  const firstFoldText = words.slice(0, 180).join(' ').toLowerCase();
+
+  const linksInFirstFold = allLinks.filter(l => {
+    const linkText = (l.text || '').toLowerCase();
+    const linkUrl = (l.url || '').toLowerCase();
+    return (linkText.length > 2 && firstFoldText.includes(linkText)) || (linkUrl.length > 5 && firstFoldText.includes(linkUrl));
+  });
 
   return {
     totalLinks: allLinks.length,
@@ -345,7 +448,9 @@ function analyzeLinks(content) {
     externalLinksCount: externalLinks.length,
     internalLinks,
     externalLinks,
-    linksInFirstFoldCount: linksInFirstFold.length
+    linksInFirstFoldCount: linksInFirstFold.length,
+    uncleanLinks,
+    isAllClean: uncleanLinks.length === 0
   };
 }
 
@@ -427,7 +532,7 @@ export async function onRequestPost(context) {
     const metaLength = finalMeta.length;
 
     const hemingway = calculateHemingwayGrade(trimmedContent);
-    const linkAnalysis = analyzeLinks(trimmedContent);
+    const linkAnalysis = analyzeLinks(trimmedContent, finalTitle);
 
     const userPrompt = `Please review the following blog post thoroughly according to the strict editorial, SEO, and compliance guidelines.
 
@@ -437,9 +542,12 @@ VERIFIED SYSTEM-COMPUTED METRICS (REAL LIVE DATA EXTRACTED FROM POST):
 - Explicit Title Provided: "${finalTitle}" (Length: ${titleLength} characters. ${titleLength > 0 && titleLength <= 58 ? 'Under 58 chars: PASS for length.' : titleLength === 0 ? 'No title provided: FAIL.' : `Over 58 chars (${titleLength}/58): FAIL.`})
 - Explicit Meta Description Provided: "${finalMeta}" (Length: ${metaLength} characters. ${metaLength > 0 && metaLength <= 155 ? 'Under 155 chars: PASS for length.' : metaLength === 0 ? 'No meta description: FAIL.' : `Over 155 chars (${metaLength}/155): FAIL.`})
 - Exact Live Hemingway Readability Score: ${hemingway.label} (Score: ${hemingway.rawScore}. ${hemingway.meetsRequirement ? 'Passes rule [TONE-04] (<= Grade 7).' : 'Fails rule [TONE-04] (exceeds Grade 7).'})
-- Actual Extracted Internal Links Count: ${linkAnalysis.internalLinksCount} internal links (${linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4 ? 'Passes rule [LINKS-01] (2-4 internal links).' : `Fails rule [LINKS-01] (Expected 2-4, found ${linkAnalysis.internalLinksCount}).`})
-- Actual Extracted External Links Count: ${linkAnalysis.externalLinksCount} external links (${linkAnalysis.externalLinksCount > 0 ? 'Passes rule [LINKS-03].' : 'Fails rule [LINKS-03] (No external reference links found).'})
-- Links in Opening 1st Fold (First ~180 words): ${linkAnalysis.linksInFirstFoldCount} (${linkAnalysis.linksInFirstFoldCount === 0 ? 'Passes rule [LINKS-02].' : 'Fails rule [LINKS-02] (Do not place internal links in 1st fold).'})
+- Actual Extracted Internal Links Count: ${linkAnalysis.internalLinksCount} internal link(s) (${linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4 ? 'Passes rule [LINK-01] (2-4 internal links).' : linkAnalysis.internalLinksCount === 0 ? 'Fails rule [LINK-01] (0 internal links).' : `Warning for rule [LINK-01] (Found ${linkAnalysis.internalLinksCount}).`})
+- Actual Extracted External Links Count: ${linkAnalysis.externalLinksCount} external link(s) (${linkAnalysis.externalLinksCount > 0 ? 'Passes rule [LINK-03].' : 'No external reference links found.'})
+- Links in Opening 1st Fold (First ~180 words): ${linkAnalysis.linksInFirstFoldCount} (${linkAnalysis.linksInFirstFoldCount === 0 ? 'Passes rule [LINK-02].' : 'Fails rule [LINK-02] (Do not place internal links in 1st fold).'})
+- URL Cleanliness Verification: ${linkAnalysis.isAllClean ? 'ALL URLs ARE 100% CLEAN (Zero UTM / AI tracking parameters). Rule [LINK-04] is a PASS.' : `Found ${linkAnalysis.uncleanLinks.length} URL(s) with tracking parameters: ${linkAnalysis.uncleanLinks.map(l => l.url).join(', ')}.`}
+- List of Detected Internal Links: ${linkAnalysis.internalLinks.length > 0 ? linkAnalysis.internalLinks.map(l => `"${l.text}" (${l.url})`).join(', ') : 'None'}
+- List of Detected External Links: ${linkAnalysis.externalLinks.length > 0 ? linkAnalysis.externalLinks.map(l => `"${l.text}" (${l.url})`).join(', ') : 'None'}
 - Estimated Reading Time: ~${readTimeMin} minutes
 ================================================================================
 
@@ -553,25 +661,95 @@ ${trimmedContent}
         tone04.notes = `Calculated readability level: ${hemingway.label} (Automated Readability Index: ${hemingway.rawScore}, Target: <= Grade 7).`;
       }
 
-      const links01 = parsedResult.checklist.find(c => c.ruleId === 'LINKS-01');
-      if (links01) {
+      const link01 = parsedResult.checklist.find(c => c.ruleId === 'LINK-01' || c.ruleId === 'LINKS-01');
+      if (link01) {
         if (linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4) {
-          links01.status = 'Pass';
-          links01.notes = `Found ${linkAnalysis.internalLinksCount} internal links in article body (meets 2-4 requirement).`;
+          link01.status = 'Pass';
+          link01.notes = `Found ${linkAnalysis.internalLinksCount} internal links in article body: ${linkAnalysis.internalLinks.map(l => l.text).join(', ')} (meets 2-4 requirement).`;
         } else if (linkAnalysis.internalLinksCount === 0) {
-          links01.status = 'Fail';
-          links01.notes = 'No internal links detected in the article. Please add 2 to 4 relevant internal links.';
+          link01.status = 'Fail';
+          link01.notes = 'No internal links detected in the article. Please add 2 to 4 relevant internal links.';
         } else {
-          links01.status = 'Warning';
-          links01.notes = `Found ${linkAnalysis.internalLinksCount} internal links. Recommendation is 2 to 4 relevant internal links.`;
+          link01.status = 'Warning';
+          link01.notes = `Found ${linkAnalysis.internalLinksCount} internal link(s). Recommendation is 2 to 4 relevant internal links.`;
+        }
+      }
+
+      const link02 = parsedResult.checklist.find(c => c.ruleId === 'LINK-02' || c.ruleId === 'LINKS-02');
+      if (link02) {
+        if (linkAnalysis.linksInFirstFoldCount === 0) {
+          link02.status = 'Pass';
+          link02.notes = 'No internal links placed in introductory fold (first ~180 words). Reader focus preserved.';
+        } else {
+          link02.status = 'Warning';
+          link02.notes = `Found ${linkAnalysis.linksInFirstFoldCount} link(s) in the opening fold. Recommend moving links further down.`;
+        }
+      }
+
+      const link03 = parsedResult.checklist.find(c => c.ruleId === 'LINK-03' || c.ruleId === 'LINKS-03');
+      if (link03) {
+        if (linkAnalysis.externalLinksCount > 0) {
+          link03.status = 'Pass';
+          link03.notes = `Found ${linkAnalysis.externalLinksCount} authoritative external citation link(s).`;
+        } else {
+          link03.status = 'Warning';
+          link03.notes = 'No external citation links found. Add authoritative external reference links where data/claims are mentioned.';
+        }
+      }
+
+      const link04 = parsedResult.checklist.find(c => c.ruleId === 'LINK-04' || c.ruleId === 'LINKS-04');
+      if (link04) {
+        if (linkAnalysis.isAllClean) {
+          link04.status = 'Pass';
+          link04.notes = linkAnalysis.totalLinks === 0 
+            ? 'No URLs with tracking parameters detected.' 
+            : `All ${linkAnalysis.totalLinks} detected URLs are verified clean (zero UTM, AI, or advertising tracking parameters).`;
+        } else {
+          link04.status = 'Fail';
+          link04.notes = `Detected tracking parameters in ${linkAnalysis.uncleanLinks.length} URL(s): ${linkAnalysis.uncleanLinks.map(l => l.url).join(', ')}`;
         }
       }
     }
 
-    if (words >= 1200 && parsedResult.violations) {
-      parsedResult.violations = parsedResult.violations.filter(v => 
-        v.ruleId !== 'CONTENT-01' && !v.issue.toLowerCase().includes('word count')
-      );
+    // Filter out false violations based on verified deterministic metrics
+    if (parsedResult.violations) {
+      if (words >= 1200) {
+        parsedResult.violations = parsedResult.violations.filter(v => 
+          v.ruleId !== 'CONTENT-01' && !v.issue.toLowerCase().includes('word count')
+        );
+      }
+      if (linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4) {
+        parsedResult.violations = parsedResult.violations.filter(v => 
+          v.ruleId !== 'LINK-01' && v.ruleId !== 'LINKS-01'
+        );
+      }
+      if (linkAnalysis.isAllClean) {
+        parsedResult.violations = parsedResult.violations.filter(v => 
+          v.ruleId !== 'LINK-04' && v.ruleId !== 'LINKS-04'
+        );
+      }
+      if (linkAnalysis.linksInFirstFoldCount === 0) {
+        parsedResult.violations = parsedResult.violations.filter(v => 
+          v.ruleId !== 'LINK-02' && v.ruleId !== 'LINKS-02'
+        );
+      }
+    }
+
+    // Deterministic compliance score adjustment
+    if (parsedResult.checklist && parsedResult.checklist.length > 0) {
+      const total = parsedResult.checklist.length;
+      const passCount = parsedResult.checklist.filter(c => c.status === 'Pass').length;
+      const warningCount = parsedResult.checklist.filter(c => c.status === 'Warning').length;
+      const failCount = parsedResult.checklist.filter(c => c.status === 'Fail').length;
+      
+      const deterministicScore = Math.round(((passCount * 1.0) + (warningCount * 0.6)) / total * 100);
+      parsedResult.complianceScore = Math.max(deterministicScore, parsedResult.complianceScore || 0);
+
+      if (failCount === 0 && warningCount <= 3 && parsedResult.complianceScore >= 85) {
+        parsedResult.overallStatus = 'Pass';
+      } else if (failCount > 0 || parsedResult.complianceScore < 85) {
+        parsedResult.overallStatus = 'Needs Revision';
+      }
     }
 
     const finalReport = {
