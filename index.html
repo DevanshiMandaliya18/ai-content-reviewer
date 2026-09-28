@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Content Review | Stateless Editorial & Compliance Auditor</title>
+  <meta name="description" content="A lightweight, stateless content review web application powered by Google Gemini API and official Gen AI SDK.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.svg">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="/" class="brand">
+        <div class="brand-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">AI Content Reviewer</span>
+          <span class="brand-badge">Stateless Editorial Auditor</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <!-- Live System Status -->
+        <div class="status-pill" id="systemStatusPill" title="Backend & Gemini connection status">
+          <span class="status-dot" id="systemStatusDot"></span>
+          <span id="systemStatusText">Checking API...</span>
+        </div>
+
+        <!-- Rulebook Button -->
+        <button id="openRulebookBtn" class="btn btn-secondary btn-sm" title="View Hardcoded Editorial Guidelines">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+          <span>Editorial Rulebook</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <main class="main-wrapper">
+
+    <!-- Error Notice Banner -->
+    <div id="errorBanner" class="error-banner">
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="flex-shrink:0;">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+      </svg>
+      <div>
+        <strong>Audit Alert:</strong> <span id="errorMessageText">An error occurred.</span>
+      </div>
+    </div>
+
+
+    <!-- Workspace Grid (2 Columns: Editor & Results) -->
+    <div class="workspace-grid">
+
+      <!-- LEFT: Editor Panel -->
+      <section class="editor-panel glass-panel" aria-label="Content Submission Editor">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--primary);">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <span>Article / Blog Post Editor</span>
+          </h2>
+          <div class="panel-controls">
+            <button id="pasteBtn" class="btn btn-secondary btn-sm" title="Paste text from clipboard">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              <span>Paste</span>
+            </button>
+            <button id="clearEditorBtn" class="btn btn-secondary btn-sm" title="Clear text area">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="editor-wrapper">
+          <div class="editor-inputs-stack">
+
+            <!-- Title Field -->
+            <div class="input-field-group">
+              <div class="input-field-header">
+                <label for="blogTitle" class="input-field-label">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent-cyan);"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                  <span>Article Title</span>
+                  <span class="field-hint">(Rule: &lt; 58 chars &amp; includes primary keyword)</span>
+                </label>
+                <span id="titleCharBadge" class="counter-badge badge-pass">0 / 58 chars</span>
+              </div>
+              <input
+                type="text"
+                id="blogTitle"
+                class="editor-input-text"
+                placeholder="e.g., REST API Design: 5 Rules for Modern Microservices"
+                autocomplete="off"
+              />
+            </div>
+
+            <!-- Meta Description Field -->
+            <div class="input-field-group">
+              <div class="input-field-header">
+                <label for="blogMetaDescription" class="input-field-label">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--primary);"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                  <span>Meta Description</span>
+                  <span class="field-hint">(Rule: &lt; 155 chars &amp; includes primary keyword)</span>
+                </label>
+                <span id="metaCharBadge" class="counter-badge badge-pass">0 / 155 chars</span>
+              </div>
+              <textarea
+                id="blogMetaDescription"
+                class="editor-input-textarea"
+                rows="2"
+                placeholder="e.g., Master REST API design with 5 practical rules for scalable microservices, clean endpoints, and reliable error responses."
+              ></textarea>
+            </div>
+
+            <!-- Main Article Body (Proper Rich Text Editor) -->
+            <div class="input-field-group editor-body-group" style="flex: 1; display: flex; flex-direction: column;">
+              <div class="input-field-header">
+                <label for="blogContent" class="input-field-label">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--pass);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>Article Body Content</span>
+                  <span class="field-hint">(Pro Editor: Headings H1-H4, Tables, Alignment, Code, Lists)</span>
+                </label>
+              </div>
+
+              <!-- Proper Rich Text Editor Container -->
+              <div class="rich-editor-wrapper">
+                <textarea id="blogContent" class="content-textarea" placeholder="Write or paste your article draft here... Format headings, tables, code blocks, lists, and links."></textarea>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="editor-footer">
+          <div class="editor-stats">
+            <span class="stat-item" id="wordCount">0 words</span>
+            <span>•</span>
+            <span class="stat-item" id="charCount">0 chars</span>
+            <span>•</span>
+            <span class="stat-item" id="readingTime">~0 min read</span>
+          </div>
+
+          <div class="run-btn-wrapper">
+            <button id="runReviewBtn" class="btn btn-primary btn-run" disabled>
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+              </svg>
+              <span>Run Content Review</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Results & Report Panel -->
+      <section class="results-panel glass-panel" aria-label="Content Review Report">
+        <div class="panel-header">
+          <h2 class="panel-title">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent-cyan);">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            <span>Structured Audit Report</span>
+          </h2>
+
+          <div class="panel-controls">
+            <!-- Download Dropdown -->
+            <div class="download-dropdown-wrapper">
+              <button id="downloadBtn" class="btn btn-secondary btn-sm" title="Export review report">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Download Report</span>
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+
+              <div id="downloadMenu" class="dropdown-menu">
+                <button class="dropdown-item" id="exportMdBtn">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                  <span>Markdown Report (.md)</span>
+                </button>
+                <button class="dropdown-item" id="exportTxtBtn">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>Plain Text Report (.txt)</span>
+                </button>
+                <button class="dropdown-item" id="exportJsonBtn">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                  <span>Structured JSON (.json)</span>
+                </button>
+                <button class="dropdown-item" id="printReportBtn">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                  <span>Print / Save PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-scrollable">
+
+          <!-- 1. Initial Empty State -->
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon">
+              <svg width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="empty-title">Ready to Review Content</h3>
+            <p class="empty-desc">
+              Paste your article draft in the editor on the left or select a sample preset, then click <strong>Run Content Review</strong> to generate an instant structured audit report.
+            </p>
+          </div>
+
+          <!-- 2. Loading State Animation -->
+          <div id="loadingState" class="loading-state">
+            <div class="scanner-box">
+              <div class="scanner-laser"></div>
+              <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+              </svg>
+            </div>
+            <h3 class="loading-title">Analyzing Content Integrity</h3>
+            <div id="loadingStepText" class="loading-steps">Submitting to Gemini 2.5 Flash...</div>
+          </div>
+
+          <!-- 3. Active Report View -->
+          <div id="reportView" class="report-view" style="display: none;">
+
+            <!-- Visual Scorecard Widget (Dynamic Green / Yellow / Red Tiers) -->
+            <div id="verdictCard" class="scorecard-widget glass-panel score-tier-green">
+              <div class="scorecard-top-row">
+                <!-- Circular Score Dial -->
+                <div class="verdict-gauge-wrapper">
+                  <svg class="gauge-svg" viewBox="0 0 100 100">
+                    <circle class="gauge-bg" cx="50" cy="50" r="38"></circle>
+                    <circle id="gaugeFill" class="gauge-fill" cx="50" cy="50" r="38" stroke-dasharray="238.76" stroke-dashoffset="0"></circle>
+                  </svg>
+                  <div class="gauge-text">
+                    <span id="scoreDisplay" class="gauge-score">95</span>
+                    <span class="gauge-label">Score</span>
+                  </div>
+                </div>
+
+                <!-- Verdict Text & Status Badge -->
+                <div class="verdict-details">
+                  <div class="verdict-badge-row">
+                    <span id="statusBadge" class="verdict-badge pass">✅ Pass</span>
+                    <span id="scoreTierLabel" class="score-tier-label">Grade A (Publication Ready)</span>
+                  </div>
+                  <h3 id="verdictTitle" class="verdict-title">Compliant & Ready for Publication</h3>
+                  <p id="verdictSummary" class="verdict-summary">
+                    Executive summary of review findings will render here.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Metrics Grid -->
+            <div class="metrics-row">
+              <div class="metric-pill">
+                <span class="metric-pill-label">Word Count (Min 1200)</span>
+                <span id="metricWords" class="metric-pill-val">0 w</span>
+              </div>
+              <div class="metric-pill">
+                <span class="metric-pill-label">Hemingway (≤ Grade 7)</span>
+                <span id="metricGrade" class="metric-pill-val">N/A</span>
+              </div>
+              <div class="metric-pill metric-pill-keyword">
+                <span class="metric-pill-label">Primary Keyword (2-4x)</span>
+                <span id="metricKeyword" class="metric-pill-val">N/A</span>
+              </div>
+              <div class="metric-pill">
+                <span class="metric-pill-label">Internal Links (2-4x)</span>
+                <span id="metricLinks" class="metric-pill-val">0 internal</span>
+              </div>
+            </div>
+
+            <!-- Section Navigation Tabs -->
+            <div class="report-tabs">
+              <button class="tab-btn active" data-tab="categories">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                <span>Categorized Breakdown</span>
+                <span id="violationsTabBadge" class="tab-badge badge-danger">0</span>
+              </button>
+
+              <button class="tab-btn" data-tab="checklist">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                <span>Rule-by-Rule Checklist</span>
+                <span id="checklistTabBadge" class="tab-badge">23</span>
+              </button>
+
+              <button class="tab-btn" data-tab="actionPlan">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span>Action Plan & Strengths</span>
+              </button>
+            </div>
+
+            <!-- TAB 1: Categorized Breakdown Accordion Cards -->
+            <div id="tab-categories" class="tab-content active">
+              <div class="category-accordion-list">
+
+                <!-- CARD 1: Tone & Voice Violations -->
+                <div class="category-accordion open" id="accordionTone">
+                  <div class="category-accordion-header" data-toggle="accordionTone">
+                    <div class="category-header-title-group">
+                      <div class="category-icon-box">🎙️</div>
+                      <div>
+                        <div class="category-name">Tone & Voice Violations</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Anti-AI, human phrasing, non-generic details, Hemingway ≤ Grade 7</div>
+                      </div>
+                    </div>
+                    <div class="category-header-actions">
+                      <span id="badgeTone" class="category-badge-pill pass">0 Issues ✅</span>
+                      <svg class="accordion-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                  <div class="category-accordion-body">
+                    <div id="violationsToneList"></div>
+                    <div id="checklistToneList" class="checklist-container"></div>
+                  </div>
+                </div>
+
+                <!-- CARD 2: Formatting & Structure Checks -->
+                <div class="category-accordion open" id="accordionFormat">
+                  <div class="category-accordion-header" data-toggle="accordionFormat">
+                    <div class="category-header-title-group">
+                      <div class="category-icon-box">📐</div>
+                      <div>
+                        <div class="category-name">Formatting & Structure Checks</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Heading hierarchy, no -ing verbs, short paragraphs, scannable lists</div>
+                      </div>
+                    </div>
+                    <div class="category-header-actions">
+                      <span id="badgeFormat" class="category-badge-pill pass">0 Issues ✅</span>
+                      <svg class="accordion-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                  <div class="category-accordion-body">
+                    <div id="violationsFormatList"></div>
+                    <div id="checklistFormatList" class="checklist-container"></div>
+                  </div>
+                </div>
+
+                <!-- CARD 3: Compliance & Mandatory Disclaimers / SEO & Links -->
+                <div class="category-accordion open" id="accordionCompliance">
+                  <div class="category-accordion-header" data-toggle="accordionCompliance">
+                    <div class="category-header-title-group">
+                      <div class="category-icon-box">🛡️</div>
+                      <div>
+                        <div class="category-name">Compliance / Mandatory Disclaimers & SEO / Links</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Search intent early, title <58ch, internal links, clean URLs without UTM tags, min 1200w</div>
+                      </div>
+                    </div>
+                    <div class="category-header-actions">
+                      <span id="badgeCompliance" class="category-badge-pill pass">0 Issues ✅</span>
+                      <svg class="accordion-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                  <div class="category-accordion-body">
+                    <div id="violationsComplianceList"></div>
+                    <div id="checklistComplianceList" class="checklist-container"></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- TAB 2: Rule-by-Rule Checklist -->
+            <div id="tab-checklist" class="tab-content">
+              <div id="checklistContainer" class="checklist-container">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- TAB 3: Action Plan & Strengths -->
+            <div id="tab-actionPlan" class="tab-content">
+              <div style="display:flex; flex-direction:column; gap:1.25rem;">
+                <div>
+                  <h4 style="font-family:var(--font-heading); margin-bottom:0.6rem; color:var(--pass);">
+                    ✨ Key Strengths Identified
+                  </h4>
+                  <div id="strengthsContainer" class="strengths-list"></div>
+                </div>
+
+                <div>
+                  <h4 style="font-family:var(--font-heading); margin-bottom:0.6rem; color:var(--accent-cyan);">
+                    📋 Priority Action Plan for 100% Compliance
+                  </h4>
+                  <div id="actionPlanContainer" class="action-plan-list"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Editorial Guidelines Rulebook Modal -->
+  <div id="rulebookModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">📖 Content Review & SEO Guidelines Rulebook</h3>
+        <button id="closeRulebookBtn" class="btn btn-secondary btn-icon-only" title="Close modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color:var(--text-secondary); font-size:0.85rem;">
+          The system evaluates every blog post strictly against these hardcoded rules:
+        </p>
+
+        <div class="rule-category-block">
+          <div class="rule-category-title">1. SEO, Title & Meta Data</div>
+          <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
+            <li><strong>Search Intent:</strong> Clearly identified and satisfied within the first 150 to 200 words.</li>
+            <li><strong>Title:</strong> Strictly under 58 characters and contains primary keyword.</li>
+            <li><strong>Meta Description:</strong> Under 155 characters and contains primary keyword.</li>
+            <li><strong>Primary Keyword:</strong> Used naturally 2 to 4 times (avoid keyword stuffing).</li>
+            <li><strong>SEO Optimized:</strong> Natural keyword optimization and search intent alignment.</li>
+          </ul>
+        </div>
+
+        <div class="rule-category-block">
+          <div class="rule-category-title">2. Structure, Headings & Formatting</div>
+          <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
+            <li><strong>Heading Hierarchy:</strong> Logical structure (H2 → H3).</li>
+            <li><strong>Clear Headings:</strong> No vague or generic titles ("Overview", "Details", "Section 1").</li>
+            <li><strong>No -ing Verbs in Headings:</strong> Use simpler verb forms (e.g., "Build APIs" instead of "Building APIs").</li>
+            <li><strong>Short Paragraphs:</strong> 2 to 4 lines maximum per paragraph.</li>
+            <li><strong>Lists & Tables:</strong> Use bullet points and tables where needed for scannability.</li>
+            <li><strong>Flow & Transitions:</strong> Logical progression from top to bottom with smooth transitions.</li>
+            <li><strong>Natural Structure:</strong> Organic flow, avoiding rigid or templated formats.</li>
+          </ul>
+        </div>
+
+        <div class="rule-category-block">
+          <div class="rule-category-title">3. Content Depth, Quality & Accuracy</div>
+          <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
+            <li><strong>Minimum Word Count:</strong> Minimum 1200 words total.</li>
+            <li><strong>Subtopic Depth:</strong> Covers all expected subtopics thoroughly.</li>
+            <li><strong>Actionable & Example-Driven:</strong> Concrete examples, data, or frameworks for each claim.</li>
+            <li><strong>No Fluff / Filler:</strong> Zero fluff, filler, or vague statements.</li>
+            <li><strong>No Redundancy:</strong> No repeated ideas or circular statements.</li>
+            <li><strong>Accuracy & Mechanics:</strong> Factual accuracy checked; flawless grammar and spelling.</li>
+          </ul>
+        </div>
+
+        <div class="rule-category-block">
+          <div class="rule-category-title">4. Links & Clean URLs</div>
+          <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
+            <li><strong>Internal Links:</strong> Added to 2 to 4 relevant pages.</li>
+            <li><strong>Skip 1st Fold:</strong> Do not place internal links in the opening 1st fold (first 150-200 words).</li>
+            <li><strong>External Links:</strong> Relevant external reference links included.</li>
+            <li><strong>Clean URLs:</strong> No tracking parameters like <code>utm_source=gemini</code>, <code>utm_source=chatgpt</code>, or <code>utm_source=claude</code>.</li>
+          </ul>
+        </div>
+
+        <div class="rule-category-block">
+          <div class="rule-category-title">5. Tone, Readability & Anti-AI Quality</div>
+          <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
+            <li><strong>Anti-AI:</strong> Natural human writing, avoiding robotic, repetitive, or fancy wording ("delve", "tapestry", "moreover").</li>
+            <li><strong>Avoid Generic Content:</strong> Specific, useful, and correct details.</li>
+            <li><strong>Expert Yet Accessible:</strong> Authoritative yet approachable tone.</li>
+            <li><strong>Hemingway Score:</strong> Grade 7 or less readability.</li>
+            <li><strong>Intro & Conclusion:</strong> Clear intro and value-driven conclusion with CTA.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="padding:1rem 1.5rem; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end;">
+        <button id="closeRulebookFooterBtn" class="btn btn-secondary btn-sm">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
