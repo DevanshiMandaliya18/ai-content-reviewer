@@ -76,6 +76,35 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       visual: false,
       help_tabs: ['shortcuts', 'keyboardnav'],
+      paste_data_images: true,
+      paste_preprocess: function(plugin, args) {
+        let content = args.content;
+        if (!content) return;
+
+        // If pasted content is Markdown or raw text with newlines
+        if (isMarkdown(content) || (content.includes('\n') && !/<(?:p|h[1-6]|table|ul|ol|blockquote)\b[^>]*>/i.test(content))) {
+          // Auto-extract Title (# Title) if title field is empty
+          if (/^#\s+/m.test(content) && blogTitleInput && !blogTitleInput.value.trim()) {
+            const titleMatch = content.match(/^#\s*(.+)$/m);
+            if (titleMatch) {
+              blogTitleInput.value = titleMatch[1].trim();
+              content = content.replace(/^#\s*.+$\r?\n?/m, '');
+              updateTextStats();
+            }
+          }
+          // Auto-extract Meta Description if meta field is empty
+          if (/^meta(?:\s*description)?:\s*/mi.test(content) && blogMetaDescriptionInput && !blogMetaDescriptionInput.value.trim()) {
+            const metaMatch = content.match(/^meta(?:\s*description)?:\s*(.+)$/mi);
+            if (metaMatch) {
+              blogMetaDescriptionInput.value = metaMatch[1].trim();
+              content = content.replace(/^meta(?:\s*description)?:\s*.+$\r?\n?/mi, '');
+              updateTextStats();
+            }
+          }
+
+          args.content = convertMarkdownToHtml(content);
+        }
+      },
       init_instance_callback: function(editor) {
         function injectMenubarRight() {
           const container = editor.getContainer();
@@ -222,26 +251,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Convert Markdown text to rich HTML for Editor display
+  // Helper: Detect if string is Markdown or multi-paragraph plain text
+  function isMarkdown(content) {
+    if (!content || typeof content !== 'string') return false;
+    if (/^#{1,6}\s+/m.test(content)) return true;
+    if (/^[-*+]\s+/m.test(content)) return true;
+    if (/^\d+\.\s+/m.test(content)) return true;
+    if (/\[.+\]\(.+\)/.test(content)) return true;
+    if (/```[\s\S]*?```/.test(content)) return true;
+    if (/\r?\n\s*\r?\n/.test(content) && !/<(?:p|h[1-6]|table|ul|ol|blockquote)\b/i.test(content)) return true;
+    return false;
+  }
+
+  // Convert Markdown text to rich HTML for Editor display with proper paragraph preservation
   function convertMarkdownToHtml(md) {
     if (!md) return '';
-    let html = md;
-    // Code blocks
-    html = html.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/gi, (m, lang, code) => {
+    let html = md.trim();
+
+    // 1. Code blocks
+    html = html.replace(/```([a-z0-9_-]*)\r?\n([\s\S]*?)```/gi, (m, lang, code) => {
       return `<pre><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
     });
-    // Headings
+
+    // 2. Headings
+    html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+    html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
     html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
     html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
     html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
     html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-    // Blockquotes
+
+    // 3. Blockquotes
     html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
-    // Bold, Italic, Code
+
+    // 4. Bold, Italic, Strikethrough, Code
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+    html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Markdown Pipe Tables
+
+    // 5. Markdown Pipe Tables
     html = html.replace(/((?:\|[^\n]+\|\r?\n?)+)/g, (match) => {
       const tableLines = match.trim().split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (tableLines.length < 2) return match;
@@ -268,23 +319,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return tableHtml;
     });
 
-    // Links
+    // 6. Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-    // Lists
-    html = html.replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>');
+
+    // 7. Unordered Lists
+    html = html.replace(/^[-*+]\s+(.*$)/gim, '<ul><li>$1</li></ul>');
     html = html.replace(/<\/ul>\s*<ul>/g, '');
-    html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
+
+    // 8. Ordered Lists
+    html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
     html = html.replace(/<\/ol>\s*<ol>/g, '');
-    // Paragraphs
-    const blocks = html.split(/\n\s*\n/);
+
+    // 9. Distinct Paragraph Splitting on double newlines
+    const blocks = html.split(/\r?\n\s*\r?\n/);
     html = blocks.map(block => {
       const trimmed = block.trim();
       if (!trimmed) return '';
-      if (trimmed.startsWith('<h') || trimmed.startsWith('<ul') || trimmed.startsWith('<ol') || trimmed.startsWith('<pre') || trimmed.startsWith('<blockquote') || trimmed.startsWith('<table')) {
+      if (/^<(?:h[1-6]|ul|ol|pre|blockquote|table|p|div)\b/i.test(trimmed)) {
         return trimmed;
       }
-      return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
-    }).join('');
+      return `<p>${trimmed.replace(/\r?\n/g, '<br>')}</p>`;
+    }).filter(Boolean).join('\n');
 
     return html;
   }
@@ -339,16 +394,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (editor && editorReady) {
       if (!content || !content.trim()) {
         editor.setContent('');
-      } else if (content.includes('<') && content.includes('>')) {
-        editor.setContent(content);
-      } else {
+      } else if (isMarkdown(content) || !/<(?:p|h[1-6]|table|ul|ol|blockquote|div)\b[^>]*>/i.test(content)) {
         const html = convertMarkdownToHtml(content);
         editor.setContent(html);
+      } else {
+        editor.setContent(content);
       }
     } else if (blogContentInput) {
-      blogContentInput.value = content || '';
-    }
-    if (blogContentInput) {
       blogContentInput.value = content || '';
     }
   }
@@ -531,27 +583,30 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const text = await navigator.clipboard.readText();
         if (text) {
-          // If title and meta are empty and text contains # Title, auto parse
-          if (text.startsWith('# ') && (!blogTitleInput.value || !getEditorBodyText())) {
-            const lines = text.split('\n');
-            const titleLine = lines.find(l => l.startsWith('# '));
-            const metaLine = lines.find(l => /^meta(?:\s*description)?:\s*/i.test(l));
-
-            if (titleLine && !blogTitleInput.value) {
-              blogTitleInput.value = titleLine.replace(/^#\s*/, '').trim();
+          let bodyText = text;
+          // Auto-extract Title (# Title) if title field is empty
+          if (/^#\s+/m.test(bodyText) && blogTitleInput && !blogTitleInput.value.trim()) {
+            const titleMatch = bodyText.match(/^#\s*(.+)$/m);
+            if (titleMatch) {
+              blogTitleInput.value = titleMatch[1].trim();
+              bodyText = bodyText.replace(/^#\s*.+$\r?\n?/m, '');
             }
-            if (metaLine && !blogMetaDescriptionInput.value) {
-              blogMetaDescriptionInput.value = metaLine.replace(/^meta(?:\s*description)?:\s*/i, '').trim();
-            }
-            setEditorContent(text);
-          } else {
-            setEditorContent(text);
           }
+          // Auto-extract Meta Description if meta field is empty
+          if (/^meta(?:\s*description)?:\s*/mi.test(bodyText) && blogMetaDescriptionInput && !blogMetaDescriptionInput.value.trim()) {
+            const metaMatch = bodyText.match(/^meta(?:\s*description)?:\s*(.+)$/mi);
+            if (metaMatch) {
+              blogMetaDescriptionInput.value = metaMatch[1].trim();
+              bodyText = bodyText.replace(/^meta(?:\s*description)?:\s*.+$\r?\n?/mi, '');
+            }
+          }
+
+          setEditorContent(bodyText.trim());
           updateTextStats();
-          showToast('Text pasted from clipboard');
+          showToast('Markdown text pasted and formatted with paragraphs!');
         }
       } catch (err) {
-        showToast('Unable to read clipboard. Please paste manually into editor.', 'error');
+        showToast('Unable to read clipboard. Please paste directly into editor.', 'error');
       }
     });
   }
