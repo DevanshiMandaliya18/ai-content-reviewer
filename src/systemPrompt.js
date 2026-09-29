@@ -30,7 +30,6 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 
 ================================================================================
 3. CONTENT DEPTH, QUALITY & ACCURACY:
-- [CONTENT-01] Minimum Word Count (1200+ Words): The article must meet a minimum length of 1200 words total for comprehensive topic depth.
 - [CONTENT-02] Thorough Subtopic Coverage: The article must cover all expected subtopics and search nuances thoroughly.
 - [CONTENT-03] Specific, Actionable & Example-Driven: Every claim must be backed by concrete examples, verifiable data, or practical frameworks.
 - [CONTENT-04] No Fluff, Filler, or Vague Statements: Strictly eliminate empty filler, fluff phrases ("needless to say", "in today's fast-paced world", "it is important to note"), and vague assertions.
@@ -38,10 +37,9 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 - [CONTENT-06] Factual Accuracy & Grammar/Spelling: Flawless grammar, correct spelling, accurate technical terminology, and verified claims.
 
 ================================================================================
-4. INTERNAL / EXTERNAL LINKS & CLEAN URLS:
+4. INTERNAL LINKS & CLEAN URLS:
 - [LINK-01] Internal Links Added to 2 to 4 Relevant Pages: Content should include 2 to 4 internal links to relevant contextual pages.
 - [LINK-02] Skip Internal Links in the 1st Fold: Do not place internal links in the opening 1st fold / introductory 150-200 words to keep reader focus on core intent.
-- [LINK-03] External Reference Links: Include relevant, authoritative external reference links where empirical data or citations are mentioned.
 - [LINK-04] Clean URLs (No AI / Tracking Parameters): All URLs must be clean and free of tracking parameters such as utm_source=gemini, utm_source=chatgpt, utm_source=claude, or unnecessary query tags.
 
 ================================================================================
@@ -56,8 +54,8 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 SCORING & STATUS EVALUATION CRITERIA:
 - Calculate a Compliance Score from 0 to 100 based strictly on adherence to the rules above.
 - Overall Status:
-  * "Pass": Compliance Score >= 85 AND zero critical violations (e.g. meets word count or near 1200w, search intent satisfied early, clean URLs, natural human tone, proper heading structure).
-  * "Needs Revision": Compliance Score < 85 OR serious infractions (e.g. heavily under word count, robotic AI phrasing, missing early search intent, tracking params in URLs, headings with -ing verbs, long wall paragraphs).
+  * "Pass": Compliance Score >= 85 AND zero critical violations (e.g. search intent satisfied early, clean URLs, natural human tone, proper heading structure).
+  * "Needs Revision": Compliance Score < 85 OR serious infractions (e.g. robotic AI phrasing, missing early search intent, tracking params in URLs, headings with -ing verbs, long wall paragraphs).
 
 OUTPUT FORMAT:
 - You must return ONLY a JSON response strictly conforming to the requested schema.
@@ -82,7 +80,6 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },
 
   // 3. Content Depth, Quality & Accuracy
-  { id: 'CONTENT-01', category: 'Content Depth & Accuracy', name: 'Minimum 1200 Words Total' },
   { id: 'CONTENT-02', category: 'Content Depth & Accuracy', name: 'Thorough Subtopic Coverage' },
   { id: 'CONTENT-03', category: 'Content Depth & Accuracy', name: 'Specific, Actionable & Example-Driven' },
   { id: 'CONTENT-04', category: 'Content Depth & Accuracy', name: 'No Fluff, Filler, or Vague Statements' },
@@ -92,7 +89,6 @@ const GUIDELINE_RULES = [
   // 4. Links & Clean URLs
   { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (2 to 4 Relevant Pages)' },
   { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links from 1st Fold' },
-  { id: 'LINK-03', category: 'Linking & Clean URLs', name: 'Relevant External Links Included' },
   { id: 'LINK-04', category: 'Linking & Clean URLs', name: 'Clean URLs (No AI/Tracking UTM Parameters)' },
 
   // 5. Tone, Readability & Anti-AI

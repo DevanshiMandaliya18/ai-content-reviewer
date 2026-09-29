@@ -33,7 +33,6 @@ A lightweight, stateless content review and compliance auditing platform powered
    - Natural content structure (avoid rigid or templated formats).
 
 3. **Content Depth, Quality & Accuracy**
-   - Minimum 1200 words total.
    - Thorough coverage of all expected subtopics.
    - Specific, actionable claims supported by concrete examples, data, or frameworks.
    - Zero fluff, filler phrases, or vague statements.
@@ -43,7 +42,6 @@ A lightweight, stateless content review and compliance auditing platform powered
 4. **Linking & Clean URLs**
    - Internal links added to 2 to 4 relevant pages.
    - Skip adding internal links in the 1st fold (first 150-200 words).
-   - Relevant external reference links included.
    - Clean URLs without tracking parameters (e.g. `utm_source=gemini`, `utm_source=chatgpt`, `utm_source=claude`).
 
 5. **Tone, Readability & Anti-AI Quality**

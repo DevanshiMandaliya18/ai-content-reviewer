@@ -26,7 +26,7 @@ const reviewResponseSchema = {
       properties: {
         wordCount: {
           type: Type.INTEGER,
-          description: 'Total word count of the analyzed text (Minimum required: 1200)'
+          description: 'Total word count of the analyzed text'
         },
         estimatedReadingTimeMinutes: {
           type: Type.NUMBER,
@@ -76,7 +76,7 @@ const reviewResponseSchema = {
         properties: {
           ruleId: {
             type: Type.STRING,
-            description: 'Rule code (e.g., SEO-01, STRUCT-01, CONTENT-01, LINK-01, TONE-01)'
+            description: 'Rule code (e.g., SEO-01, STRUCT-01, CONTENT-02, LINK-01, TONE-01)'
           },
           category: {
             type: Type.STRING,

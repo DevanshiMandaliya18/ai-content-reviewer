@@ -27,7 +27,6 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 
 ================================================================================
 3. CONTENT DEPTH, QUALITY & ACCURACY:
-- [CONTENT-01] Minimum Word Count (1200+ Words): The article must meet a minimum length of 1200 words total for comprehensive topic depth.
 - [CONTENT-02] Thorough Subtopic Coverage: The article must cover all expected subtopics and search nuances thoroughly.
 - [CONTENT-03] Specific, Actionable & Example-Driven: Every claim must be backed by concrete examples, verifiable data, or practical frameworks.
 - [CONTENT-04] No Fluff, Filler, or Vague Statements: Strictly eliminate empty filler, fluff phrases ("needless to say", "in today's fast-paced world", "it is important to note"), and vague assertions.
@@ -35,10 +34,9 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 - [CONTENT-06] Factual Accuracy & Grammar/Spelling: Flawless grammar, correct spelling, accurate technical terminology, and verified claims.
 
 ================================================================================
-4. INTERNAL / EXTERNAL LINKS & CLEAN URLS:
+4. INTERNAL LINKS & CLEAN URLS:
 - [LINK-01] Internal Links Added to 2 to 4 Relevant Pages: Content should include 2 to 4 internal links to relevant contextual pages.
 - [LINK-02] Skip Internal Links in the 1st Fold: Do not place internal links in the opening 1st fold / introductory 150-200 words to keep reader focus on core intent.
-- [LINK-03] External Reference Links: Include relevant, authoritative external reference links where empirical data or citations are mentioned.
 - [LINK-04] Clean URLs (No AI / Tracking Parameters): All URLs must be clean and free of tracking parameters such as utm_source=gemini, utm_source=chatgpt, utm_source=claude, or unnecessary query tags.
 
 ================================================================================
@@ -53,8 +51,8 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 SCORING & STATUS EVALUATION CRITERIA:
 - Calculate a Compliance Score from 0 to 100 based strictly on adherence to the rules above.
 - Overall Status:
-  * "Pass": Compliance Score >= 85 AND zero critical violations.
-  * "Needs Revision": Compliance Score < 85 OR serious infractions.
+  * "Pass": Compliance Score >= 85 AND zero critical violations (e.g. search intent satisfied early, clean URLs, natural human tone, proper heading structure).
+  * "Needs Revision": Compliance Score < 85 OR serious infractions (e.g. robotic AI phrasing, missing early search intent, tracking params in URLs, headings with -ing verbs, long wall paragraphs).
 
 OUTPUT FORMAT:
 - You must return ONLY a JSON response strictly conforming to the requested schema.
@@ -83,7 +81,7 @@ const JSON_SCHEMA = {
       properties: {
         wordCount: {
           type: 'INTEGER',
-          description: 'Total word count of the analyzed text (Minimum required: 1200)'
+          description: 'Total word count of the analyzed text'
         },
         estimatedReadingTimeMinutes: {
           type: 'NUMBER',
@@ -133,7 +131,7 @@ const JSON_SCHEMA = {
         properties: {
           ruleId: {
             type: 'STRING',
-            description: 'Rule code (e.g., SEO-01, STRUCT-01, CONTENT-01, LINK-01, TONE-01)'
+            description: 'Rule code (e.g., SEO-01, STRUCT-01, CONTENT-02, LINK-01, TONE-01)'
           },
           category: {
             type: 'STRING',
@@ -534,26 +532,29 @@ export async function onRequestPost(context) {
     const hemingway = calculateHemingwayGrade(trimmedContent);
     const linkAnalysis = analyzeLinks(trimmedContent, finalTitle);
 
+    // Sanitize any massive embedded base64 images before sending to Gemini prompt to prevent token limit blowups
+    const sanitizedContentForPrompt = trimmedContent
+      .replace(/<img[^>]+src=["']data:image\/[^"']+["'][^>]*>/gi, '<img alt="[embedded image]"/>')
+      .replace(/data:image\/[a-zA-Z0-9+.-]+;base64,[A-Za-z0-9+/=]{100,}/g, '[embedded image data]');
+
     const userPrompt = `Please review the following blog post thoroughly according to the strict editorial, SEO, and compliance guidelines.
 
 ================================================================================
 VERIFIED SYSTEM-COMPUTED METRICS (REAL LIVE DATA EXTRACTED FROM POST):
-- Exact Total Word Count: ${words} words (${words >= 1200 ? 'MEETS the 1200-word minimum. Rule [CONTENT-01] is a PASS.' : `DOES NOT meet 1200-word minimum (${words}/1200). Rule [CONTENT-01] is a FAIL.`})
+- Total Word Count: ${words} words (Informational statistic, do not fail for word count)
 - Explicit Title Provided: "${finalTitle}" (Length: ${titleLength} characters. ${titleLength > 0 && titleLength <= 58 ? 'Under 58 chars: PASS for length.' : titleLength === 0 ? 'No title provided: FAIL.' : `Over 58 chars (${titleLength}/58): FAIL.`})
 - Explicit Meta Description Provided: "${finalMeta}" (Length: ${metaLength} characters. ${metaLength > 0 && metaLength <= 155 ? 'Under 155 chars: PASS for length.' : metaLength === 0 ? 'No meta description: FAIL.' : `Over 155 chars (${metaLength}/155): FAIL.`})
 - Exact Live Hemingway Readability Score: ${hemingway.label} (Score: ${hemingway.rawScore}. ${hemingway.meetsRequirement ? 'Passes rule [TONE-04] (<= Grade 7).' : 'Fails rule [TONE-04] (exceeds Grade 7).'})
 - Actual Extracted Internal Links Count: ${linkAnalysis.internalLinksCount} internal link(s) (${linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4 ? 'Passes rule [LINK-01] (2-4 internal links).' : linkAnalysis.internalLinksCount === 0 ? 'Fails rule [LINK-01] (0 internal links).' : `Warning for rule [LINK-01] (Found ${linkAnalysis.internalLinksCount}).`})
-- Actual Extracted External Links Count: ${linkAnalysis.externalLinksCount} external link(s) (${linkAnalysis.externalLinksCount > 0 ? 'Passes rule [LINK-03].' : 'No external reference links found.'})
 - Links in Opening 1st Fold (First ~180 words): ${linkAnalysis.linksInFirstFoldCount} (${linkAnalysis.linksInFirstFoldCount === 0 ? 'Passes rule [LINK-02].' : 'Fails rule [LINK-02] (Do not place internal links in 1st fold).'})
 - URL Cleanliness Verification: ${linkAnalysis.isAllClean ? 'ALL URLs ARE 100% CLEAN (Zero UTM / AI tracking parameters). Rule [LINK-04] is a PASS.' : `Found ${linkAnalysis.uncleanLinks.length} URL(s) with tracking parameters: ${linkAnalysis.uncleanLinks.map(l => l.url).join(', ')}.`}
 - List of Detected Internal Links: ${linkAnalysis.internalLinks.length > 0 ? linkAnalysis.internalLinks.map(l => `"${l.text}" (${l.url})`).join(', ') : 'None'}
-- List of Detected External Links: ${linkAnalysis.externalLinks.length > 0 ? linkAnalysis.externalLinks.map(l => `"${l.text}" (${l.url})`).join(', ') : 'None'}
 - Estimated Reading Time: ~${readTimeMin} minutes
 ================================================================================
 
 RAW SUBMITTED BLOG POST CONTENT:
 ---
-${trimmedContent}
+${sanitizedContentForPrompt}
 ---`;
 
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -644,16 +645,10 @@ ${trimmedContent}
 
     // Synchronize checklist items with real metrics
     if (parsedResult.checklist) {
-      const content01 = parsedResult.checklist.find(c => c.ruleId === 'CONTENT-01');
-      if (content01) {
-        if (words >= 1200) {
-          content01.status = 'Pass';
-          content01.notes = `Verified exact word count is ${words} words (exceeds 1200-word requirement).`;
-        } else {
-          content01.status = 'Fail';
-          content01.notes = `Current word count is ${words} words (minimum required is 1200 words).`;
-        }
-      }
+      // Remove CONTENT-01 (Word Count) and LINK-03 (External Links) from checklist if present
+      parsedResult.checklist = parsedResult.checklist.filter(c => 
+        c.ruleId !== 'CONTENT-01' && c.ruleId !== 'LINK-03' && c.ruleId !== 'LINKS-03'
+      );
 
       const tone04 = parsedResult.checklist.find(c => c.ruleId === 'TONE-04');
       if (tone04) {
@@ -686,17 +681,6 @@ ${trimmedContent}
         }
       }
 
-      const link03 = parsedResult.checklist.find(c => c.ruleId === 'LINK-03' || c.ruleId === 'LINKS-03');
-      if (link03) {
-        if (linkAnalysis.externalLinksCount > 0) {
-          link03.status = 'Pass';
-          link03.notes = `Found ${linkAnalysis.externalLinksCount} authoritative external citation link(s).`;
-        } else {
-          link03.status = 'Warning';
-          link03.notes = 'No external citation links found. Add authoritative external reference links where data/claims are mentioned.';
-        }
-      }
-
       const link04 = parsedResult.checklist.find(c => c.ruleId === 'LINK-04' || c.ruleId === 'LINKS-04');
       if (link04) {
         if (linkAnalysis.isAllClean) {
@@ -711,13 +695,18 @@ ${trimmedContent}
       }
     }
 
-    // Filter out false violations based on verified deterministic metrics
+    // Filter out removed or false violations
     if (parsedResult.violations) {
-      if (words >= 1200) {
-        parsedResult.violations = parsedResult.violations.filter(v => 
-          v.ruleId !== 'CONTENT-01' && !v.issue.toLowerCase().includes('word count')
-        );
-      }
+      // Strip any CONTENT-01 (Word Count) or LINK-03 (External Links) violations completely
+      parsedResult.violations = parsedResult.violations.filter(v => 
+        v.ruleId !== 'CONTENT-01' && 
+        v.ruleId !== 'LINK-03' && 
+        v.ruleId !== 'LINKS-03' && 
+        !v.issue.toLowerCase().includes('word count') &&
+        !v.issue.toLowerCase().includes('minimum 1200') &&
+        !v.issue.toLowerCase().includes('external link')
+      );
+
       if (linkAnalysis.internalLinksCount >= 2 && linkAnalysis.internalLinksCount <= 4) {
         parsedResult.violations = parsedResult.violations.filter(v => 
           v.ruleId !== 'LINK-01' && v.ruleId !== 'LINKS-01'

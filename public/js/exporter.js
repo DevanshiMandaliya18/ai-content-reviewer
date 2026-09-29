@@ -57,7 +57,7 @@ const ReportExporter = {
     md += `## 2. Content & SEO Benchmark Metrics\n\n`;
     md += `| Quality Metric | Guideline Target | Measured Value | Benchmark Status |\n`;
     md += `| :--- | :--- | :--- | :--- |\n`;
-    md += `| **Total Word Count** | Min 1200 words | ${reportData.metrics?.wordCount || 0} words | ${(reportData.metrics?.wordCount || 0) >= 1200 ? '✅ MET' : '⚠️ UNDER TARGET'} |\n`;
+    md += `| **Total Word Count** | Informational | ${reportData.metrics?.wordCount || 0} words | ℹ️ TRACKED |\n`;
     md += `| **Hemingway Readability** | ≤ Grade 7 | ${reportData.metrics?.readingLevel || 'Grade 7 or less'} | ✅ AUDITED |\n`;
     md += `| **Primary Keyword** | 2 to 4 natural uses | "${reportData.metrics?.primaryKeyword || 'N/A'}" (${reportData.metrics?.primaryKeywordCount || 0}x) | ${(reportData.metrics?.primaryKeywordCount || 0) >= 2 && (reportData.metrics?.primaryKeywordCount || 0) <= 4 ? '✅ OPTIMAL' : '⚠️ ADJUST DENSITY'} |\n`;
     md += `| **Title Length** | < 58 characters | ${reportData.metrics?.titleLength || 0} chars | ${(reportData.metrics?.titleLength || 0) <= 58 ? '✅ MET' : '⚠️ TOO LONG'} |\n`;
@@ -143,7 +143,7 @@ const ReportExporter = {
     txt += `${subDivider}\n`;
     txt += `  Audit Timestamp : ${dateStr}\n`;
     txt += `  Audit Engine    : Google Gemini (${reportData.meta?.modelUsed || 'gemini-2.5-flash'})\n`;
-    txt += `  Audit Protocol  : Strict 34-Point Editorial & SEO Rulebook\n\n`;
+    txt += `  Audit Protocol  : Strict 24-Point Editorial & SEO Rulebook\n\n`;
 
     txt += `OVERALL EDITORIAL VERDICT:\n`;
     txt += `${subDivider}\n`;
@@ -157,7 +157,7 @@ const ReportExporter = {
 
     txt += `CONTENT & SEO BENCHMARK METRICS:\n`;
     txt += `${subDivider}\n`;
-    txt += `  * Word Count            : ${reportData.metrics?.wordCount || 0} words (Target: Min 1200 words)\n`;
+    txt += `  * Word Count            : ${reportData.metrics?.wordCount || 0} words\n`;
     txt += `  * Hemingway Readability : ${reportData.metrics?.readingLevel || 'Grade 7 or less'}\n`;
     txt += `  * Primary Keyword       : "${reportData.metrics?.primaryKeyword || 'N/A'}" (${reportData.metrics?.primaryKeywordCount || 0}x - Target: 2-4x)\n`;
     txt += `  * Title Length          : ${reportData.metrics?.titleLength || 0} characters (Target: < 58 chars)\n`;

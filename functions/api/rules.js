@@ -19,7 +19,6 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },
 
   // 3. Content Depth, Quality & Accuracy
-  { id: 'CONTENT-01', category: 'Content Depth & Accuracy', name: 'Minimum 1200 Words Total' },
   { id: 'CONTENT-02', category: 'Content Depth & Accuracy', name: 'Thorough Subtopic Coverage' },
   { id: 'CONTENT-03', category: 'Content Depth & Accuracy', name: 'Specific, Actionable & Example-Driven' },
   { id: 'CONTENT-04', category: 'Content Depth & Accuracy', name: 'No Fluff, Filler, or Vague Statements' },
@@ -29,7 +28,6 @@ const GUIDELINE_RULES = [
   // 4. Links & Clean URLs
   { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (2 to 4 Relevant Pages)' },
   { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links from 1st Fold' },
-  { id: 'LINK-03', category: 'Linking & Clean URLs', name: 'Relevant External Links Included' },
   { id: 'LINK-04', category: 'Linking & Clean URLs', name: 'Clean URLs (No AI/Tracking UTM Parameters)' },
 
   // 5. Tone, Readability & Anti-AI

@@ -85,10 +85,10 @@ Many investors believe that trading is difficult. However, our unique strategy i
   },
   {
     id: 'poor-formatting-tone',
-    name: '3. Rough Draft (Under 1200w, Wall Paragraphs, Vague Headings)',
+    name: '3. Rough Draft (Wall Paragraphs, Vague Headings, Passive Voice)',
     badge: 'NEEDS REVISION',
     badgeType: 'warning',
-    description: 'Under 1200 words, generic heading ("Section 1"), wall of text, passive voice, missing search intent satisfaction.',
+    description: 'Generic heading ("Section 1"), wall of text, passive voice, missing search intent satisfaction.',
     content: `# Productivity Tips
 
 in order to understand productivity in the modern corporate workplace environment it is important to note that many things are being done in a totally wrong way by managers. at the end of the day, employees are being overwhelmed by unnecessary meetings and useless communication apps. A study was conducted somewhere recently which proved that 99% of all corporate workers are wasting half their day on silly tasks. It was observed that when time tracking software is implemented by executives, employee morale is completely destroyed by it and work is not completed in a timely manner. needless to say, people should just stop having meetings and do better stuff instead.
