@@ -281,7 +281,7 @@
             <!-- Content Metrics Grid -->
             <div class="metrics-row">
               <div class="metric-pill">
-                <span class="metric-pill-label">Word Count (Min 1200)</span>
+                <span class="metric-pill-label">Word Count</span>
                 <span id="metricWords" class="metric-pill-val">0 w</span>
               </div>
               <div class="metric-pill">
@@ -371,7 +371,7 @@
                       <div class="category-icon-box">🛡️</div>
                       <div>
                         <div class="category-name">Compliance / Mandatory Disclaimers & SEO / Links</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">Search intent early, title <58ch, internal links, clean URLs without UTM tags, min 1200w</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">Search intent early, title &lt;58ch, internal links (skip 1st fold), clean URLs without UTM tags</div>
                       </div>
                     </div>
                     <div class="category-header-actions">
@@ -451,7 +451,7 @@
             <li><strong>Heading Hierarchy:</strong> Logical structure (H2 → H3).</li>
             <li><strong>Clear Headings:</strong> No vague or generic titles ("Overview", "Details", "Section 1").</li>
             <li><strong>No -ing Verbs in Headings:</strong> Use simpler verb forms (e.g., "Build APIs" instead of "Building APIs").</li>
-            <li><strong>Short Paragraphs:</strong> 2 to 4 lines maximum per paragraph.</li>
+            <li><strong>Short Paragraphs:</strong> 2 to 4 lines maximum per paragraph (evaluated independently).</li>
             <li><strong>Lists & Tables:</strong> Use bullet points and tables where needed for scannability.</li>
             <li><strong>Flow & Transitions:</strong> Logical progression from top to bottom with smooth transitions.</li>
             <li><strong>Natural Structure:</strong> Organic flow, avoiding rigid or templated formats.</li>
@@ -461,7 +461,6 @@
         <div class="rule-category-block">
           <div class="rule-category-title">3. Content Depth, Quality & Accuracy</div>
           <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
-            <li><strong>Minimum Word Count:</strong> Minimum 1200 words total.</li>
             <li><strong>Subtopic Depth:</strong> Covers all expected subtopics thoroughly.</li>
             <li><strong>Actionable & Example-Driven:</strong> Concrete examples, data, or frameworks for each claim.</li>
             <li><strong>No Fluff / Filler:</strong> Zero fluff, filler, or vague statements.</li>
@@ -473,9 +472,8 @@
         <div class="rule-category-block">
           <div class="rule-category-title">4. Links & Clean URLs</div>
           <ul style="padding-left:1.2rem; color:var(--text-secondary); font-size:0.85rem;">
-            <li><strong>Internal Links:</strong> Added to 2 to 4 relevant pages.</li>
-            <li><strong>Skip 1st Fold:</strong> Do not place internal links in the opening 1st fold (first 150-200 words).</li>
-            <li><strong>External Links:</strong> Relevant external reference links included.</li>
+            <li><strong>Internal Links:</strong> Must include at least 1 internal link (no upper limit).</li>
+            <li><strong>Skip 1st Fold:</strong> Do not place internal links in the opening introduction (before the first H2 heading). Internal links are allowed and encouraged from H2 onwards.</li>
             <li><strong>Clean URLs:</strong> No tracking parameters like <code>utm_source=gemini</code>, <code>utm_source=chatgpt</code>, or <code>utm_source=claude</code>.</li>
           </ul>
         </div>

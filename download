@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Environment Variables (Keep private!)
+.env
+
+# Zip Archives
+*.zip
+
+# Logs & OS
+npm-debug.log*
+.DS_Store
+Thumbs.db

@@ -27,7 +27,7 @@ A lightweight, stateless content review and compliance auditing platform powered
    - Headings follow logical hierarchy (H2 → H3).
    - Headings are clear and specific (no vague titles like "Overview" or "Details").
    - No -ing verbs in headings if simpler root forms exist (e.g., "Build APIs" vs "Building APIs").
-   - Short paragraphs (2 to 4 lines maximum).
+   - Short paragraphs (2 to 4 lines maximum per paragraph, evaluated independently).
    - Scannable bullet points, numbered lists, and tables used where needed.
    - Content flows logically from top to bottom with smooth transitions.
    - Natural content structure (avoid rigid or templated formats).
@@ -40,8 +40,8 @@ A lightweight, stateless content review and compliance auditing platform powered
    - Factual accuracy checked; flawless grammar and spelling.
 
 4. **Linking & Clean URLs**
-   - Internal links added to 2 to 4 relevant pages.
-   - Skip adding internal links in the 1st fold (first 150-200 words).
+   - Internal links added (at least 1 relevant internal link required; no upper limit).
+   - Skip adding internal links in the opening introduction (before the first H2 heading).
    - Clean URLs without tracking parameters (e.g. `utm_source=gemini`, `utm_source=chatgpt`, `utm_source=claude`).
 
 5. **Tone, Readability & Anti-AI Quality**
