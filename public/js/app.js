@@ -81,6 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let content = args.content;
         if (!content) return;
 
+        // Clean up and convert double line-breaks into distinct paragraph tags
+        content = content
+          .replace(/<p>\s*<\/p>/gi, '')
+          .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
+
         // If pasted content is Markdown or raw text with newlines
         if (isMarkdown(content) || (content.includes('\n') && !/<(?:p|h[1-6]|table|ul|ol|blockquote)\b[^>]*>/i.test(content))) {
           // Auto-extract Title (# Title) if title field is empty
@@ -103,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           args.content = convertMarkdownToHtml(content);
+        } else {
+          args.content = content;
         }
       },
       init_instance_callback: function(editor) {
@@ -330,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
     html = html.replace(/<\/ol>\s*<ol>/g, '');
 
-    // 9. Distinct Paragraph Splitting on double newlines
+    // 9. Distinct Paragraph Splitting on double newlines or blank space
     const blocks = html.split(/\r?\n\s*\r?\n/);
     html = blocks.map(block => {
       const trimmed = block.trim();
@@ -338,7 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (/^<(?:h[1-6]|ul|ol|pre|blockquote|table|p|div)\b/i.test(trimmed)) {
         return trimmed;
       }
-      return `<p>${trimmed.replace(/\r?\n/g, '<br>')}</p>`;
+      // If block contains multiple lines, convert each distinct line into its own separate paragraph
+      const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      return lines.map(line => `<p>${line}</p>`).join('\n');
     }).filter(Boolean).join('\n');
 
     return html;

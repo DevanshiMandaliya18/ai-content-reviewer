@@ -13,7 +13,7 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-01', category: 'Structure & Formatting', name: 'Logical Heading Hierarchy (H2 -> H3)' },
   { id: 'STRUCT-02', category: 'Structure & Formatting', name: 'Clear & Non-Generic Headings' },
   { id: 'STRUCT-03', category: 'Structure & Formatting', name: 'No -ing Verbs in Headings (Use Simpler Forms)' },
-  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max)' },
+  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max, Independent)' },
   { id: 'STRUCT-05', category: 'Structure & Formatting', name: 'Bullet Points & Tables Used Where Needed' },
   { id: 'STRUCT-06', category: 'Structure & Formatting', name: 'Logical Flow & Smooth Transitions' },
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },
@@ -26,8 +26,8 @@ const GUIDELINE_RULES = [
   { id: 'CONTENT-06', category: 'Content Depth & Accuracy', name: 'Factual Accuracy & Grammar/Spelling' },
 
   // 4. Links & Clean URLs
-  { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (2 to 4 Relevant Pages)' },
-  { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links from 1st Fold' },
+  { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (At Least 1 Relevant Page)' },
+  { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links in H1 & Introduction (Allowed from H2 Onwards)' },
   { id: 'LINK-04', category: 'Linking & Clean URLs', name: 'Clean URLs (No AI/Tracking UTM Parameters)' },
 
   // 5. Tone, Readability & Anti-AI

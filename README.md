@@ -41,7 +41,7 @@ A lightweight, stateless content review and compliance auditing platform powered
 
 4. **Linking & Clean URLs**
    - Internal links added (at least 1 relevant internal link required; no upper limit).
-   - Skip adding internal links in the opening introduction (before the first H2 heading).
+   - Skip adding internal links in the H1 title and opening introduction paragraph(s) (allowed everywhere from H2 onwards).
    - Clean URLs without tracking parameters (e.g. `utm_source=gemini`, `utm_source=chatgpt`, `utm_source=claude`).
 
 5. **Tone, Readability & Anti-AI Quality**

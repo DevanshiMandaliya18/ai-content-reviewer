@@ -23,7 +23,7 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 - [STRUCT-01] Logical Heading Hierarchy (H2 -> H3): Headings must follow a strict, logical hierarchy (H1 -> H2 -> H3).
 - [STRUCT-02] Clear & Non-Generic Headings: Headings must be clear, compelling, and descriptive (no vague or generic headers like "Overview", "Details", "Section 1").
 - [STRUCT-03] No -ing Verbs in Headings: Do not use -ing verbs in headings if a simpler, direct root form exists (e.g., use "Build High-Performance APIs" instead of "Building High-Performance APIs", "Optimize Your Database" instead of "Optimizing Your Database").
-- [STRUCT-04] Short Paragraphs (2 to 4 Lines Max): Paragraphs must be concise (2 to 4 lines/sentences maximum) to prevent visual fatigue.
+- [STRUCT-04] Short Paragraphs (2 to 4 Lines Max): Paragraphs must be concise (2 to 4 lines/sentences maximum per paragraph). Do NOT merge or combine separate paragraphs. If two paragraphs are separated by a blank line or paragraph boundary, evaluate each independently. Only flag a violation if a single individual paragraph exceeds 4-5 lines of text.
 - [STRUCT-05] Bullet Points & Tables Used Where Needed: Lists, bullet points, or comparison tables must be used for multi-item concepts, steps, or structured data.
 - [STRUCT-06] Logical Flow & Smooth Section Transitions: Content must flow logically from top to bottom with seamless, natural transitions between sections.
 - [STRUCT-07] Natural Structure (Avoid Templated Feel): Structure must feel organic and tailored to the topic, avoiding repetitive or cookie-cutter templates.
@@ -38,8 +38,8 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 
 ================================================================================
 4. INTERNAL LINKS & CLEAN URLS:
-- [LINK-01] Internal Links Added to 2 to 4 Relevant Pages: Content should include 2 to 4 internal links to relevant contextual pages.
-- [LINK-02] Skip Internal Links in the 1st Fold: Do not place internal links in the opening 1st fold / introductory 150-200 words to keep reader focus on core intent.
+- [LINK-01] Internal Links Added to Relevant Pages: Content must include at least 1 internal link to relevant contextual pages. Flag an error/warning ONLY if 0 internal links are present. Do NOT flag any error if multiple internal links (e.g. 2, 4, 6, 10, etc.) are added; there is no upper limit.
+- [LINK-02] Skip Internal Links in H1 and Introduction: Do not place internal links in the H1 title/heading or in the opening introductory paragraph(s) before the first H2 heading. Internal links are allowed and encouraged everywhere else from the first H2 heading onwards. Word count limits do NOT apply to link restrictions; only check that H1 and the opening introduction paragraph contain no internal links.
 - [LINK-04] Clean URLs (No AI / Tracking Parameters): All URLs must be clean and free of tracking parameters such as utm_source=gemini, utm_source=chatgpt, utm_source=claude, or unnecessary query tags.
 
 ================================================================================
@@ -74,7 +74,7 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-01', category: 'Structure & Formatting', name: 'Logical Heading Hierarchy (H2 -> H3)' },
   { id: 'STRUCT-02', category: 'Structure & Formatting', name: 'Clear & Non-Generic Headings' },
   { id: 'STRUCT-03', category: 'Structure & Formatting', name: 'No -ing Verbs in Headings (Use Simpler Forms)' },
-  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max)' },
+  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max, Independent)' },
   { id: 'STRUCT-05', category: 'Structure & Formatting', name: 'Bullet Points & Tables Used Where Needed' },
   { id: 'STRUCT-06', category: 'Structure & Formatting', name: 'Logical Flow & Smooth Transitions' },
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },
@@ -87,8 +87,8 @@ const GUIDELINE_RULES = [
   { id: 'CONTENT-06', category: 'Content Depth & Accuracy', name: 'Factual Accuracy & Grammar/Spelling' },
 
   // 4. Links & Clean URLs
-  { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (2 to 4 Relevant Pages)' },
-  { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links from 1st Fold' },
+  { id: 'LINK-01', category: 'Linking & Clean URLs', name: 'Internal Links Added (At Least 1 Relevant Page)' },
+  { id: 'LINK-02', category: 'Linking & Clean URLs', name: 'Skip Internal Links in H1 & Introduction (Allowed from H2 Onwards)' },
   { id: 'LINK-04', category: 'Linking & Clean URLs', name: 'Clean URLs (No AI/Tracking UTM Parameters)' },
 
   // 5. Tone, Readability & Anti-AI
