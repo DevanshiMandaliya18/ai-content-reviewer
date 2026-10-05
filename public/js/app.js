@@ -81,12 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let content = args.content;
         if (!content) return;
 
-        // Clean up and convert double line-breaks into distinct paragraph tags
-        content = content
-          .replace(/<p>\s*<\/p>/gi, '')
-          .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '</p><p>');
-
-        // If pasted content is Markdown or raw text with newlines
+        // 1. If pasted content is Markdown or raw text with newlines
         if (isMarkdown(content) || (content.includes('\n') && !/<(?:p|h[1-6]|table|ul|ol|blockquote)\b[^>]*>/i.test(content))) {
           // Auto-extract Title (# Title) if title field is empty
           if (/^#\s+/m.test(content) && blogTitleInput && !blogTitleInput.value.trim()) {
@@ -109,7 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           args.content = convertMarkdownToHtml(content);
         } else {
-          args.content = content;
+          // Clean HTML from Word / Docs while preserving all headings, paragraphs, lists, tables, bold, links
+          args.content = sanitizePastedHtml(content);
         }
       },
       init_instance_callback: function(editor) {
@@ -270,6 +266,30 @@ document.addEventListener('DOMContentLoaded', () => {
     return false;
   }
 
+  // Helper: Clean and sanitize pasted HTML while preserving headings, paragraphs, lists, tables, bold, italics, links
+  function sanitizePastedHtml(html) {
+    if (!html || typeof html !== 'string') return '';
+    let cleaned = html
+      // Strip Word / Office XML comments and namespaces
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<o:p>[\s\S]*?<\/o:p>/gi, '')
+      .replace(/<\/?(?:o|w|m|v):[^>]*>/gi, '')
+      .replace(/<\/?font[^>]*>/gi, '')
+      // Convert double <br> or blank lines inside HTML into paragraph breaks
+      .replace(/<br\s*\/?>\s*(?:&nbsp;|\s)*<br\s*\/?>/gi, '</p><p>')
+      // Strip invasive inline styling attributes (font-family, font-size, background-color, line-height) that break dark mode
+      .replace(/\s+(?:style|class|id|align|valign|bgcolor|color|face|size|lang)=["'][^"']*["']/gi, '')
+      // Remove empty spans
+      .replace(/<\/?span[^>]*>/gi, '')
+      // Clean empty paragraphs
+      .replace(/<p>\s*(?:&nbsp;|\s)*<\/p>/gi, '')
+      // Remove duplicate paragraph boundaries
+      .replace(/(?:<\/p>\s*)+<\/p>/gi, '</p>')
+      .replace(/(?:<p>\s*)+<p>/gi, '<p>');
+    
+    return cleaned.trim();
+  }
+
   // Convert Markdown text to rich HTML for Editor display with proper paragraph preservation
   function convertMarkdownToHtml(md) {
     if (!md) return '';
@@ -337,18 +357,17 @@ document.addEventListener('DOMContentLoaded', () => {
     html = html.replace(/^\d+\.\s+(.*$)/gim, '<ol><li>$1</li></ol>');
     html = html.replace(/<\/ol>\s*<ol>/g, '');
 
-    // 9. Distinct Paragraph Splitting on double newlines or blank space
-    const blocks = html.split(/\r?\n\s*\r?\n/);
+    // 9. Distinct Paragraph Splitting on double newlines or blank space (preserving unified paragraph blocks)
+    const blocks = html.split(/\r?\n\s*\r?\n+/);
     html = blocks.map(block => {
       const trimmed = block.trim();
       if (!trimmed) return '';
       if (/^<(?:h[1-6]|ul|ol|pre|blockquote|table|p|div)\b/i.test(trimmed)) {
         return trimmed;
       }
-      // If block contains multiple lines, convert each distinct line into its own separate paragraph
-      const lines = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      return lines.map(line => `<p>${line}</p>`).join('\n');
-    }).filter(Boolean).join('\n');
+      const paraContent = trimmed.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(' ');
+      return `<p>${paraContent}</p>`;
+    }).filter(Boolean).join('\n\n');
 
     return html;
   }
@@ -407,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = convertMarkdownToHtml(content);
         editor.setContent(html);
       } else {
-        editor.setContent(content);
+        editor.setContent(sanitizePastedHtml(content));
       }
     } else if (blogContentInput) {
       blogContentInput.value = content || '';
@@ -612,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           setEditorContent(bodyText.trim());
           updateTextStats();
-          showToast('Markdown text pasted and formatted with paragraphs!');
+          showToast('Content pasted with exact structure and formatting preserved!');
         }
       } catch (err) {
         showToast('Unable to read clipboard. Please paste directly into editor.', 'error');
