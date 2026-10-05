@@ -13,7 +13,7 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-01', category: 'Structure & Formatting', name: 'Logical Heading Hierarchy (H2 -> H3)' },
   { id: 'STRUCT-02', category: 'Structure & Formatting', name: 'Clear & Non-Generic Headings' },
   { id: 'STRUCT-03', category: 'Structure & Formatting', name: 'No -ing Verbs in Headings (Use Simpler Forms)' },
-  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max, Independent)' },
+  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (Max 4 Statements/Sentences Delimited by . ! ?)' },
   { id: 'STRUCT-05', category: 'Structure & Formatting', name: 'Bullet Points & Tables Used Where Needed' },
   { id: 'STRUCT-06', category: 'Structure & Formatting', name: 'Logical Flow & Smooth Transitions' },
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },

@@ -19,8 +19,8 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 2. STRUCTURE, HEADINGS & FORMATTING:
 - [STRUCT-01] Logical Heading Hierarchy (H2 -> H3): Headings must follow a strict, logical hierarchy (H1 -> H2 -> H3).
 - [STRUCT-02] Clear & Non-Generic Headings: Headings must be clear, compelling, and descriptive (no vague or generic headers like "Overview", "Details", "Section 1").
-- [STRUCT-03] No -ing Verbs in Headings: Do not use -ing verbs in headings if a simpler, direct root form exists (e.g., use "Build High-Performance APIs" instead of "Building High-Performance APIs", "Optimize Your Database" instead of "Optimizing Your Database").
-- [STRUCT-04] Short Paragraphs (2 to 4 Lines Max): Paragraphs must be concise (2 to 4 lines/sentences maximum per paragraph). Do NOT merge or combine separate paragraphs. If two paragraphs are separated by a blank line or paragraph boundary, evaluate each independently. Only flag a violation if a single individual paragraph exceeds 4-5 lines of text.
+- [STRUCT-03] No -ing Verbs in Headings: Do not use -ing verbs in headings if a simpler, direct root form exists (e.g., use "Build High-Performance APIs" instead of "Building High-Performance APIs", "Optimize Your Database" instead of "Optimizing Your Database"). Only flag a violation if a heading explicitly contains an action verb ending in "-ing" (such as "Creating", "Developing", "Deploying"). Do NOT flag headings that use root verbs (e.g. "Build"), agent nouns (e.g. "Builders", "Designers"), or standard nouns (e.g. "Marketing", "Pricing", "Spring").
+- [STRUCT-04] Short Paragraphs (Max 4 Statements/Sentences): Each paragraph must contain a maximum of 4 statements/sentences (delimited by '.', '!', or '?'). There is NO word count limit on paragraphs. Visual line wrap caused by screen or editor width does NOT count as extra lines. Only flag a violation if a single individual paragraph contains 5 or more distinct statements/sentences.
 - [STRUCT-05] Bullet Points & Tables Used Where Needed: Lists, bullet points, or comparison tables must be used for multi-item concepts, steps, or structured data.
 - [STRUCT-06] Logical Flow & Smooth Section Transitions: Content must flow logically from top to bottom with seamless, natural transitions between sections.
 - [STRUCT-07] Natural Structure (Avoid Templated Feel): Structure must feel organic and tailored to the topic, avoiding repetitive or cookie-cutter templates.
@@ -478,6 +478,186 @@ function countKeywordOccurrences(text, keyword) {
   return matches ? matches.length : 0;
 }
 
+/**
+ * Helper: Analyze paragraphs and statement counts (delimited by ., !, ?)
+ * Enforces maximum 4 statements per paragraph rule without any paragraph word count limits.
+ * Visual line wrapping is strictly ignored.
+ * Evaluates each paragraph independently, properly splitting at <p>, <div>, <br><br>, or blank lines.
+ */
+function analyzeParagraphStatements(content) {
+  if (!content || typeof content !== 'string' || !content.trim()) {
+    return {
+      totalParagraphs: 0,
+      maxStatements: 0,
+      violatingParagraphs: [],
+      allCompliant: true
+    };
+  }
+
+  // 1. Remove code blocks
+  let cleaned = content.replace(/```[\s\S]*?```/g, '\n\n');
+
+  // 2. Normalize all HTML and markdown paragraph delimiters into double newlines
+  let normalized = cleaned
+    .replace(/<br\s*\/?>\s*(?:&nbsp;|\s)*<br\s*\/?>/gi, '\n\n')
+    .replace(/<\/(?:p|div|h[1-6]|li|blockquote|section|article|tr|td|th|table)>/gi, '\n\n')
+    .replace(/<(?:p|div|h[1-6]|li|blockquote|section|article|tr|td|th|table)\b[^>]*>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\u00a0/g, ' ');
+
+  // 3. Extract independent paragraph blocks
+  const rawBlocks = normalized.split(/\r?\n\s*\r?\n+/);
+  const paragraphTexts = [];
+
+  for (const block of rawBlocks) {
+    const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    // Exclude markdown headings, table rows, and divider lines
+    const proseLines = lines.filter(l => !l.startsWith('#') && !l.startsWith('|') && !l.startsWith('---') && !l.startsWith('==='));
+    const text = proseLines.join(' ')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[*_~`]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    if (
+      text && 
+      /[a-zA-Z0-9]/.test(text) && 
+      !text.toLowerCase().startsWith('meta description:') && 
+      !text.toLowerCase().startsWith('title:') &&
+      text.length > 5
+    ) {
+      paragraphTexts.push(text);
+    }
+  }
+
+  // 4. For each individual independent paragraph, count statements delimited by . ! ?
+  const violatingParagraphs = [];
+  let maxStatements = 0;
+
+  for (let i = 0; i < paragraphTexts.length; i++) {
+    const para = paragraphTexts[i];
+
+    // Protect abbreviations and decimal numbers
+    let protectedPara = para
+      .replace(/\b([0-9]+)\.([0-9]+)\b/g, '$1_$2')
+      .replace(/\b(e\.g\.|i\.e\.|vs\.|mr\.|mrs\.|dr\.|prof\.|inc\.|ltd\.|etc\.|al\.|no\.|vol\.)/gi, (m) => m.replace(/\./g, '_'));
+
+    // Split by ., !, or ?
+    const rawStatements = protectedPara
+      .split(/[.!?]+(?:\s+|$)/)
+      .map(s => s.replace(/_/g, '.').trim())
+      .filter(s => /[a-zA-Z0-9]/.test(s));
+
+    const statementCount = rawStatements.length > 0 ? rawStatements.length : (/[a-zA-Z0-9]/.test(para) ? 1 : 0);
+
+    if (statementCount > maxStatements) {
+      maxStatements = statementCount;
+    }
+
+    if (statementCount > 4) {
+      violatingParagraphs.push({
+        index: i + 1,
+        statementCount,
+        excerpt: para.length > 140 ? para.substring(0, 140) + '...' : para,
+        fullText: para
+      });
+    }
+  }
+
+  return {
+    totalParagraphs: paragraphTexts.length,
+    maxStatements,
+    violatingParagraphs,
+    allCompliant: violatingParagraphs.length === 0
+  };
+}
+
+/**
+ * Standard words ending in -ing that are valid nouns, adjectives, or industry terms (NOT action verbs to simplify)
+ */
+const ALLOWED_ING_WORDS = new Set([
+  'marketing', 'pricing', 'engineering', 'accounting', 'training', 'branding', 'clothing',
+  'housing', 'shipping', 'landing', 'spring', 'ring', 'wing', 'king', 'thing', 'everything',
+  'anything', 'something', 'nothing', 'during', 'according', 'ongoing', 'upcoming', 'interesting',
+  'morning', 'evening', 'ceiling', 'flooring', 'lighting', 'ranking', 'scoring', 'listing', 'padding',
+  'spelling', 'caching', 'routing', 'clustering', 'piping', 'monitoring'
+]);
+
+/**
+ * Helper: Extract all headings and verify whether they contain action verbs ending in '-ing'
+ */
+function analyzeHeadings(content, title = '') {
+  if (!content || typeof content !== 'string') {
+    return {
+      allHeadings: [],
+      violatingHeadings: [],
+      allCompliant: true
+    };
+  }
+
+  const headings = [];
+
+  if (title && title.trim()) {
+    headings.push({ level: 'H1', text: title.trim() });
+  }
+
+  const htmlHeadingRegex = /<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  let match;
+  while ((match = htmlHeadingRegex.exec(content)) !== null) {
+    const level = match[1].toUpperCase();
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+    if (text) {
+      headings.push({ level, text });
+    }
+  }
+
+  const mdHeadingRegex = /^(#{1,6})\s+(.+)$/gm;
+  while ((match = mdHeadingRegex.exec(content)) !== null) {
+    const level = 'H' + match[1].length;
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+    if (text && !headings.some(h => h.text.toLowerCase() === text.toLowerCase())) {
+      headings.push({ level, text });
+    }
+  }
+
+  const violatingHeadings = [];
+
+  for (const heading of headings) {
+    const words = heading.text
+      .replace(/[^\w\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const detectedIngWords = [];
+    for (const word of words) {
+      const lower = word.toLowerCase();
+      if (lower.endsWith('ing') && lower.length > 4 && !ALLOWED_ING_WORDS.has(lower)) {
+        detectedIngWords.push(word);
+      }
+    }
+
+    if (detectedIngWords.length > 0) {
+      violatingHeadings.push({
+        ...heading,
+        ingWords: detectedIngWords
+      });
+    }
+  }
+
+  return {
+    allHeadings: headings,
+    violatingHeadings,
+    allCompliant: violatingHeadings.length === 0
+  };
+}
+
 export async function onRequestPost(context) {
   try {
     const apiKey = context.env.GEMINI_API_KEY;
@@ -549,6 +729,8 @@ export async function onRequestPost(context) {
 
     const hemingway = calculateHemingwayGrade(trimmedContent);
     const linkAnalysis = analyzeLinks(trimmedContent, finalTitle);
+    const paraAnalysis = analyzeParagraphStatements(trimmedContent);
+    const headingAnalysis = analyzeHeadings(trimmedContent, finalTitle);
 
     // Sanitize any massive embedded base64 images before sending to Gemini prompt to prevent token limit blowups
     const sanitizedContentForPrompt = trimmedContent
@@ -557,8 +739,10 @@ export async function onRequestPost(context) {
 
     // Format content with explicit double-newline paragraph separation for clean LLM parsing
     const formattedContentForPrompt = sanitizedContentForPrompt
+      .replace(/<br\s*\/?>\s*(?:&nbsp;|\s)*<br\s*\/?>/gi, '</p>\n\n<p>')
       .replace(/<\/(?:p|div|h[1-6]|li|blockquote|section|article)>/gi, '</$1>\n\n')
-      .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<p\b[^>]*>\s*<\/p>/gi, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
@@ -573,6 +757,8 @@ VERIFIED SYSTEM-COMPUTED METRICS (REAL LIVE DATA EXTRACTED FROM POST):
 - Actual Extracted Internal Links Count: ${linkAnalysis.internalLinksCount} internal link(s) (${linkAnalysis.internalLinksCount >= 1 ? `Passes rule [LINK-01] (${linkAnalysis.internalLinksCount} internal link(s) found - meets at least 1 requirement).` : 'Fails rule [LINK-01] (0 internal links found. At least 1 internal link required).'})
 - Internal Links in H1 & Introduction (Before 1st H2): ${linkAnalysis.linksInFirstFoldCount} (${linkAnalysis.linksInFirstFoldCount === 0 ? 'Passes rule [LINK-02] (No internal links in H1 or opening intro before 1st H2).' : `Fails rule [LINK-02] (Found ${linkAnalysis.linksInFirstFoldCount} internal link(s) in H1/intro before 1st H2).`})
 - URL Cleanliness Verification: ${linkAnalysis.isAllClean ? 'ALL URLs ARE 100% CLEAN (Zero UTM / AI tracking parameters). Rule [LINK-04] is a PASS.' : `Found ${linkAnalysis.uncleanLinks.length} URL(s) with tracking parameters: ${linkAnalysis.uncleanLinks.map(l => l.url).join(', ')}.`}
+- Heading -ing Verbs Verification: ${headingAnalysis.allCompliant ? `ALL ${headingAnalysis.allHeadings.length} HEADINGS COMPLIANT (Zero unneeded -ing action verbs; headings use direct root verbs or clean nouns). Rule [STRUCT-03] is a PASS.` : `Found ${headingAnalysis.violatingHeadings.length} heading(s) with -ing action verbs: ${headingAnalysis.violatingHeadings.map(h => `"${h.text}" (${h.ingWords.join(', ')})`).join('; ')}.`}
+- Paragraph Statement Count Verification: ${paraAnalysis.allCompliant ? `ALL ${paraAnalysis.totalParagraphs} PARAGRAPHS FULLY COMPLIANT (Each paragraph has <= 4 statements delimited by . ! ?; highest count in any paragraph: ${paraAnalysis.maxStatements} statements). Rule [STRUCT-04] is a PASS. Zero word count restrictions apply.` : `Found ${paraAnalysis.violatingParagraphs.length} paragraph(s) with more than 4 statements: ${paraAnalysis.violatingParagraphs.map(p => `Paragraph #${p.index} has ${p.statementCount} statements ("${p.excerpt}")`).join('; ')}.`}
 - List of Detected Internal Links: ${linkAnalysis.internalLinks.length > 0 ? linkAnalysis.internalLinks.map(l => `"${l.text}" (${l.url})`).join(', ') : 'None'}
 - Estimated Reading Time: ~${readTimeMin} minutes
 ===============================================================================
@@ -718,6 +904,34 @@ ${formattedContentForPrompt}
           link04.notes = `Detected tracking parameters in ${linkAnalysis.uncleanLinks.length} URL(s): ${linkAnalysis.uncleanLinks.map(l => l.url).join(', ')}`;
         }
       }
+
+      // [STRUCT-03] No -ing Verbs in Headings
+      const struct03 = parsedResult.checklist.find(c => c.ruleId === 'STRUCT-03');
+      if (struct03) {
+        if (headingAnalysis.allCompliant) {
+          struct03.status = 'Pass';
+          struct03.notes = headingAnalysis.allHeadings.length === 0 
+            ? 'No headings found to evaluate.' 
+            : `All ${headingAnalysis.allHeadings.length} heading(s) use direct root verbs or clean nouns (zero unnecessary -ing action verbs detected).`;
+        } else {
+          struct03.status = 'Fail';
+          struct03.notes = `Found ${headingAnalysis.violatingHeadings.length} heading(s) with -ing verbs: ${headingAnalysis.violatingHeadings.map(h => `"${h.text}" (uses "${h.ingWords.join(', ')}")`).join(', ')}. Please use root verb forms (e.g. "Build" instead of "Building").`;
+        }
+      }
+
+      // [STRUCT-04] Short Paragraphs (Max 4 Statements Delimited by . ! ?)
+      const struct04 = parsedResult.checklist.find(c => c.ruleId === 'STRUCT-04');
+      if (struct04) {
+        if (paraAnalysis.allCompliant) {
+          struct04.status = 'Pass';
+          struct04.notes = paraAnalysis.totalParagraphs === 0 
+            ? 'No paragraphs found to evaluate.' 
+            : `All ${paraAnalysis.totalParagraphs} paragraph(s) strictly comply with the 4-statement maximum (highest count: ${paraAnalysis.maxStatements} statement(s) delimited by '.', '!', or '?'). Zero word count restrictions applied.`;
+        } else {
+          struct04.status = 'Fail';
+          struct04.notes = `Found ${paraAnalysis.violatingParagraphs.length} paragraph(s) exceeding 4 statements: ${paraAnalysis.violatingParagraphs.map(p => `Paragraph #${p.index} (${p.statementCount} statements)`).join(', ')}.`;
+        }
+      }
     }
 
     // Filter out removed or false violations
@@ -751,6 +965,29 @@ ${formattedContentForPrompt}
           !v.issue.toLowerCase().includes('150 to 200 words')
         );
       }
+      // Filter out false STRUCT-04 violations
+      parsedResult.violations = parsedResult.violations.filter(v => {
+        if (v.ruleId === 'STRUCT-04' || v.issue.toLowerCase().includes('paragraph exceeds') || v.issue.toLowerCase().includes('4 statements') || v.issue.toLowerCase().includes('4 sentences') || v.issue.toLowerCase().includes('4 lines')) {
+          if (paraAnalysis.allCompliant) return false;
+          const excerptAnalysis = analyzeParagraphStatements(v.originalExcerpt || '');
+          return !excerptAnalysis.allCompliant;
+        }
+        return true;
+      });
+
+      // Filter out false STRUCT-03 violations
+      parsedResult.violations = parsedResult.violations.filter(v => {
+        if (v.ruleId === 'STRUCT-03' || v.issue.toLowerCase().includes('-ing') || v.issue.toLowerCase().includes('ing verb')) {
+          if (headingAnalysis.allCompliant) return false;
+          const excerptWords = (v.originalExcerpt || '').replace(/[^\w\s-]/g, ' ').split(/\s+/).filter(Boolean);
+          const hasRealIngVerb = excerptWords.some(w => {
+            const lower = w.toLowerCase();
+            return lower.endsWith('ing') && lower.length > 4 && !ALLOWED_ING_WORDS.has(lower);
+          });
+          return hasRealIngVerb;
+        }
+        return true;
+      });
     }
 
     // Deterministic compliance score adjustment
