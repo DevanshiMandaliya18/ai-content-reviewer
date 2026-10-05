@@ -27,7 +27,7 @@ A lightweight, stateless content review and compliance auditing platform powered
    - Headings follow logical hierarchy (H2 → H3).
    - Headings are clear and specific (no vague titles like "Overview" or "Details").
    - No -ing verbs in headings if simpler root forms exist (e.g., "Build APIs" vs "Building APIs").
-   - Short paragraphs (2 to 4 lines maximum per paragraph, evaluated independently).
+   - Short paragraphs (maximum 4 statements/sentences per paragraph delimited by . ! ?; no paragraph word count limit; visual line wrap ignored).
    - Scannable bullet points, numbered lists, and tables used where needed.
    - Content flows logically from top to bottom with smooth transitions.
    - Natural content structure (avoid rigid or templated formats).
