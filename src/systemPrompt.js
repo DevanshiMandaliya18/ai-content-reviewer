@@ -22,8 +22,8 @@ You must review and evaluate the content EXCLUSIVELY against the following STRIC
 2. STRUCTURE, HEADINGS & FORMATTING:
 - [STRUCT-01] Logical Heading Hierarchy (H2 -> H3): Headings must follow a strict, logical hierarchy (H1 -> H2 -> H3).
 - [STRUCT-02] Clear & Non-Generic Headings: Headings must be clear, compelling, and descriptive (no vague or generic headers like "Overview", "Details", "Section 1").
-- [STRUCT-03] No -ing Verbs in Headings: Do not use -ing verbs in headings if a simpler, direct root form exists (e.g., use "Build High-Performance APIs" instead of "Building High-Performance APIs", "Optimize Your Database" instead of "Optimizing Your Database").
-- [STRUCT-04] Short Paragraphs (2 to 4 Lines Max): Paragraphs must be concise (2 to 4 lines/sentences maximum per paragraph). Do NOT merge or combine separate paragraphs. If two paragraphs are separated by a blank line or paragraph boundary, evaluate each independently. Only flag a violation if a single individual paragraph exceeds 4-5 lines of text.
+- [STRUCT-03] No -ing Verbs in Headings: Do not use -ing verbs in headings if a simpler, direct root form exists (e.g., use "Build High-Performance APIs" instead of "Building High-Performance APIs", "Optimize Your Database" instead of "Optimizing Your Database"). Only flag a violation if a heading explicitly contains an action verb ending in "-ing" (such as "Creating", "Developing", "Deploying"). Do NOT flag headings that use root verbs (e.g. "Build"), agent nouns (e.g. "Builders", "Designers"), or standard nouns (e.g. "Marketing", "Pricing", "Spring").
+- [STRUCT-04] Short Paragraphs (Max 4 Statements/Sentences): Each paragraph must contain a maximum of 4 statements/sentences (delimited by '.', '!', or '?'). There is NO word count limit on paragraphs. Visual line wrap caused by screen or editor width does NOT count as extra lines. Only flag a violation if a single individual paragraph contains 5 or more distinct statements/sentences.
 - [STRUCT-05] Bullet Points & Tables Used Where Needed: Lists, bullet points, or comparison tables must be used for multi-item concepts, steps, or structured data.
 - [STRUCT-06] Logical Flow & Smooth Section Transitions: Content must flow logically from top to bottom with seamless, natural transitions between sections.
 - [STRUCT-07] Natural Structure (Avoid Templated Feel): Structure must feel organic and tailored to the topic, avoiding repetitive or cookie-cutter templates.
@@ -74,7 +74,7 @@ const GUIDELINE_RULES = [
   { id: 'STRUCT-01', category: 'Structure & Formatting', name: 'Logical Heading Hierarchy (H2 -> H3)' },
   { id: 'STRUCT-02', category: 'Structure & Formatting', name: 'Clear & Non-Generic Headings' },
   { id: 'STRUCT-03', category: 'Structure & Formatting', name: 'No -ing Verbs in Headings (Use Simpler Forms)' },
-  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (2 to 4 Lines Max, Independent)' },
+  { id: 'STRUCT-04', category: 'Structure & Formatting', name: 'Short Paragraphs (Max 4 Statements/Sentences Delimited by . ! ?)' },
   { id: 'STRUCT-05', category: 'Structure & Formatting', name: 'Bullet Points & Tables Used Where Needed' },
   { id: 'STRUCT-06', category: 'Structure & Formatting', name: 'Logical Flow & Smooth Transitions' },
   { id: 'STRUCT-07', category: 'Structure & Formatting', name: 'Natural Structure (Avoid Templated Feel)' },
