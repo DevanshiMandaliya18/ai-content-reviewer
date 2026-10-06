@@ -4,7 +4,8 @@
 export async function onRequestGet(context) {
   const apiKey = context.env.GEMINI_API_KEY || '';
   const isKeyConfigured = Boolean(apiKey && apiKey !== 'your_gemini_api_key_here');
-  const model = context.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const rawModel = (context.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+  const model = rawModel.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '');
 
   const data = {
     status: 'online',

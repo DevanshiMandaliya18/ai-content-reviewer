@@ -675,9 +675,10 @@ export async function onRequestPost(context) {
       );
     }
 
-    const modelName = context.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const rawModel = (context.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+    const modelName = rawModel.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '');
     const body = await context.request.json();
-    const { content, title, metaDescription } = body;
+    const { content, title, metaDescription, secondaryKeyword } = body;
 
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return new Response(
@@ -851,6 +852,31 @@ ${formattedContentForPrompt}
           combinedSearchSpace,
           parsedResult.metrics.primaryKeyword
         );
+      }
+
+      // Handle user-specified secondary keyword (strictly user-entered, never hallucinated/auto-detected by AI)
+      const rawSecondary = typeof secondaryKeyword === 'string' ? secondaryKeyword.trim() : '';
+      if (rawSecondary) {
+        const combinedSearchSpace = `${finalTitle} ${finalMeta} ${trimmedContent}`;
+        const secList = rawSecondary.split(',').map(s => s.trim()).filter(Boolean);
+        if (secList.length > 1) {
+          const secResults = secList.map(kw => ({
+            keyword: kw,
+            count: countKeywordOccurrences(combinedSearchSpace, kw)
+          }));
+          parsedResult.metrics.secondaryKeyword = rawSecondary;
+          parsedResult.metrics.secondaryKeywordCount = secResults.reduce((acc, curr) => acc + curr.count, 0);
+          parsedResult.metrics.secondaryKeywordsList = secResults;
+        } else {
+          const count = countKeywordOccurrences(combinedSearchSpace, rawSecondary);
+          parsedResult.metrics.secondaryKeyword = rawSecondary;
+          parsedResult.metrics.secondaryKeywordCount = count;
+          parsedResult.metrics.secondaryKeywordsList = [{ keyword: rawSecondary, count }];
+        }
+      } else {
+        parsedResult.metrics.secondaryKeyword = null;
+        parsedResult.metrics.secondaryKeywordCount = 0;
+        parsedResult.metrics.secondaryKeywordsList = [];
       }
     }
 
