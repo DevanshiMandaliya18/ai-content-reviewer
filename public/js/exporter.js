@@ -60,6 +60,9 @@ const ReportExporter = {
     md += `| **Total Word Count** | Informational | ${reportData.metrics?.wordCount || 0} words | ℹ️ TRACKED |\n`;
     md += `| **Hemingway Readability** | ≤ Grade 7 | ${reportData.metrics?.readingLevel || 'Grade 7 or less'} | ✅ AUDITED |\n`;
     md += `| **Primary Keyword** | 2 to 4 natural uses | "${reportData.metrics?.primaryKeyword || 'N/A'}" (${reportData.metrics?.primaryKeywordCount || 0}x) | ${(reportData.metrics?.primaryKeywordCount || 0) >= 2 && (reportData.metrics?.primaryKeywordCount || 0) <= 4 ? '✅ OPTIMAL' : '⚠️ ADJUST DENSITY'} |\n`;
+    if (reportData.metrics?.secondaryKeyword) {
+      md += `| **Secondary Keyword** | Tracked if provided | "${reportData.metrics.secondaryKeyword}" (${reportData.metrics?.secondaryKeywordCount || 0}x) | ℹ️ TRACKED |\n`;
+    }
     md += `| **Title Length** | < 58 characters | ${reportData.metrics?.titleLength || 0} chars | ${(reportData.metrics?.titleLength || 0) <= 58 ? '✅ MET' : '⚠️ TOO LONG'} |\n`;
     md += `| **Internal Links** | At least 1 relevant link (skip intro before 1st H2) | ${reportData.metrics?.internalLinksCount || 0} links | ${(reportData.metrics?.internalLinksCount || 0) >= 1 ? '✅ MET' : '⚠️ NO LINKS'} |\n`;
     md += `| **Detected Tone** | Expert & Accessible, Anti-AI | ${reportData.metrics?.detectedTone || 'N/A'} | ✅ EVALUATED |\n\n`;
@@ -160,6 +163,9 @@ const ReportExporter = {
     txt += `  * Word Count            : ${reportData.metrics?.wordCount || 0} words\n`;
     txt += `  * Hemingway Readability : ${reportData.metrics?.readingLevel || 'Grade 7 or less'}\n`;
     txt += `  * Primary Keyword       : "${reportData.metrics?.primaryKeyword || 'N/A'}" (${reportData.metrics?.primaryKeywordCount || 0}x - Target: 2-4x)\n`;
+    if (reportData.metrics?.secondaryKeyword) {
+      txt += `  * Secondary Keyword     : "${reportData.metrics.secondaryKeyword}" (${reportData.metrics.secondaryKeywordCount || 0}x)\n`;
+    }
     txt += `  * Title Length          : ${reportData.metrics?.titleLength || 0} characters (Target: < 58 chars)\n`;
     txt += `  * Internal Links Count  : ${reportData.metrics?.internalLinksCount || 0} links (Target: At least 1 link, skip intro before 1st H2)\n`;
     txt += `  * Detected Voice/Tone   : ${reportData.metrics?.detectedTone || 'N/A'}\n\n`;

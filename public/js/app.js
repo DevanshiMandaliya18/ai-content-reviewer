@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const blogTitleInput = document.getElementById('blogTitle');
   const blogMetaDescriptionInput = document.getElementById('blogMetaDescription');
+  const blogSecondaryKeywordInput = document.getElementById('blogSecondaryKeyword');
   const blogContentInput = document.getElementById('blogContent');
   const titleCharBadge = document.getElementById('titleCharBadge');
   const metaCharBadge = document.getElementById('metaCharBadge');
@@ -507,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (blogTitleInput) blogTitleInput.value = title;
     if (blogMetaDescriptionInput) blogMetaDescriptionInput.value = meta;
+    if (blogSecondaryKeywordInput) blogSecondaryKeywordInput.value = preset.secondaryKeyword || '';
     
     const bodyContent = bodyLines.join('\n').trim();
     setEditorContent(bodyContent);
@@ -599,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!hasText || confirm('Clear all inputs (Title, Meta Description, and Article Body)?')) {
       if (blogTitleInput) blogTitleInput.value = '';
       if (blogMetaDescriptionInput) blogMetaDescriptionInput.value = '';
+      if (blogSecondaryKeywordInput) blogSecondaryKeywordInput.value = '';
       setEditorContent('');
       updateTextStats();
       if (blogTitleInput) blogTitleInput.focus();
@@ -679,6 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
   runReviewBtn.addEventListener('click', async () => {
     const title = blogTitleInput ? blogTitleInput.value.trim() : '';
     const metaDescription = blogMetaDescriptionInput ? blogMetaDescriptionInput.value.trim() : '';
+    const secondaryKeyword = blogSecondaryKeywordInput ? blogSecondaryKeywordInput.value.trim() : '';
     const content = getEditorContent();
 
     if (!content && !title) {
@@ -694,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content, title, metaDescription })
+        body: JSON.stringify({ content, title, metaDescription, secondaryKeyword })
       });
 
       const json = await response.json();
@@ -780,6 +784,28 @@ document.addEventListener('DOMContentLoaded', () => {
         metricKeyword.textContent = `${data.metrics.primaryKeyword} (${count}x)`;
       } else {
         metricKeyword.textContent = 'None Detected';
+      }
+    }
+
+    // Secondary Keyword Metric Pill (Dynamically displayed only when user provides secondary keyword)
+    const metricSecContainer = document.getElementById('metricSecondaryKeywordContainer');
+    const metricSecKeyword = document.getElementById('metricSecondaryKeyword');
+    if (metricSecContainer && metricSecKeyword) {
+      if (data.metrics?.secondaryKeyword) {
+        metricSecContainer.style.display = 'flex';
+        if (data.metrics.secondaryKeywordsList && data.metrics.secondaryKeywordsList.length > 1) {
+          const listText = data.metrics.secondaryKeywordsList
+            .map(item => `${item.keyword} (${item.count}x)`)
+            .join(', ');
+          metricSecKeyword.textContent = listText;
+          metricSecKeyword.title = listText;
+        } else {
+          const count = data.metrics.secondaryKeywordCount ?? 0;
+          metricSecKeyword.textContent = `${data.metrics.secondaryKeyword} (${count}x)`;
+          metricSecKeyword.title = `${data.metrics.secondaryKeyword} appears ${count} time(s)`;
+        }
+      } else {
+        metricSecContainer.style.display = 'none';
       }
     }
 
