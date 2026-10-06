@@ -54,7 +54,7 @@ app.get('/api/presets', (req, res) => {
  */
 app.post('/api/review', async (req, res) => {
   try {
-    const { content, title, metaDescription } = req.body;
+    const { content, title, metaDescription, secondaryKeyword } = req.body;
 
     if (!content || typeof content !== 'string') {
       return res.status(400).json({
@@ -70,7 +70,7 @@ app.post('/api/review', async (req, res) => {
       });
     }
 
-    const reviewResult = await reviewService.reviewContent(content, title, metaDescription);
+    const reviewResult = await reviewService.reviewContent(content, title, metaDescription, secondaryKeyword);
     return res.json({
       success: true,
       data: reviewResult
