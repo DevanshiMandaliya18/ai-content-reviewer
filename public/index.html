@@ -135,6 +135,24 @@
               ></textarea>
             </div>
 
+            <!-- Secondary Keyword Field (Optional) -->
+            <div class="input-field-group">
+              <div class="input-field-header">
+                <label for="blogSecondaryKeyword" class="input-field-label">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--accent-purple);"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                  <span>Secondary Keyword(s)</span>
+                  <span class="field-hint">(Optional — tracked in audit report if entered)</span>
+                </label>
+              </div>
+              <input
+                type="text"
+                id="blogSecondaryKeyword"
+                class="editor-input-text"
+                placeholder="e.g., microservices best practices, API architecture"
+                autocomplete="off"
+              />
+            </div>
+
             <!-- Main Article Body (Proper Rich Text Editor) -->
             <div class="input-field-group editor-body-group" style="flex: 1; display: flex; flex-direction: column;">
               <div class="input-field-header">
@@ -291,6 +309,10 @@
               <div class="metric-pill metric-pill-keyword">
                 <span class="metric-pill-label">Primary Keyword (2-4x)</span>
                 <span id="metricKeyword" class="metric-pill-val">N/A</span>
+              </div>
+              <div id="metricSecondaryKeywordContainer" class="metric-pill metric-pill-secondary-keyword" style="display: none;">
+                <span class="metric-pill-label">Secondary Keyword</span>
+                <span id="metricSecondaryKeyword" class="metric-pill-val">N/A</span>
               </div>
               <div class="metric-pill">
                 <span class="metric-pill-label">Internal Links (2-4x)</span>
