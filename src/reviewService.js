@@ -476,7 +476,8 @@ function analyzeHeadings(content, title = '') {
  */
 class ReviewService {
   constructor() {
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const rawModel = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+    this.modelName = rawModel.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '');
     this.ai = null;
   }
 
@@ -523,13 +524,14 @@ class ReviewService {
   }
 
   /**
-   * Perform content review on blog text with dedicated title and meta description
+   * Perform content review on blog text with dedicated title, meta description, and optional secondary keyword
    * @param {string} content - Main article content
    * @param {string} [title] - Dedicated article title
    * @param {string} [metaDescription] - Dedicated meta description
+   * @param {string} [secondaryKeyword] - User-specified secondary target keyword(s)
    * @returns {Promise<object>} Structured review report
    */
-  async reviewContent(content, title = '', metaDescription = '') {
+  async reviewContent(content, title = '', metaDescription = '', secondaryKeyword = '') {
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       throw new Error('Please provide valid blog post content for analysis.');
     }
@@ -662,6 +664,31 @@ ${formattedContentForPrompt}
             combinedSearchSpace,
             parsedResult.metrics.primaryKeyword
           );
+        }
+
+        // Handle user-specified secondary keyword (strictly user-entered, never hallucinated/auto-detected by AI)
+        const rawSecondary = typeof secondaryKeyword === 'string' ? secondaryKeyword.trim() : '';
+        if (rawSecondary) {
+          const combinedSearchSpace = `${finalTitle} ${finalMeta} ${trimmedContent}`;
+          const secList = rawSecondary.split(',').map(s => s.trim()).filter(Boolean);
+          if (secList.length > 1) {
+            const secResults = secList.map(kw => ({
+              keyword: kw,
+              count: countKeywordOccurrences(combinedSearchSpace, kw)
+            }));
+            parsedResult.metrics.secondaryKeyword = rawSecondary;
+            parsedResult.metrics.secondaryKeywordCount = secResults.reduce((acc, curr) => acc + curr.count, 0);
+            parsedResult.metrics.secondaryKeywordsList = secResults;
+          } else {
+            const count = countKeywordOccurrences(combinedSearchSpace, rawSecondary);
+            parsedResult.metrics.secondaryKeyword = rawSecondary;
+            parsedResult.metrics.secondaryKeywordCount = count;
+            parsedResult.metrics.secondaryKeywordsList = [{ keyword: rawSecondary, count }];
+          }
+        } else {
+          parsedResult.metrics.secondaryKeyword = null;
+          parsedResult.metrics.secondaryKeywordCount = 0;
+          parsedResult.metrics.secondaryKeywordsList = [];
         }
       }
 
